@@ -210,6 +210,9 @@ assertion = Assertion(
 
 w = io.BytesIO()
 assertion.pack(w)
+f=open("claim","bw")
+f.write(w.getvalue())
+f.close()
 import binascii
 print("packed hex: ", binascii.hexlify(w.getvalue()))
 r = io.BytesIO(w.getvalue())
@@ -219,3 +222,4 @@ w2 = io.BytesIO()
 assertion2.pack(w2)
 assert w.getvalue() == w2.getvalue()
 assert assertion == assertion2
+print(assertion2.claims[1])
