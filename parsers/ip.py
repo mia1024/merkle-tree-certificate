@@ -32,3 +32,5 @@ class IPv6Address(BinRep):
     def print(self) -> str:
         return f"16 {self.__class__.__name__} {str(self.value)}"
 
+
+__all__ = ["IPv4Address", "IPv6Address"]

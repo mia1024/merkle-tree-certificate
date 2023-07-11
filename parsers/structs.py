@@ -1,6 +1,8 @@
 from typing import NamedTuple
-from .base import BinRep,parse_success,ParseResult
+from .base import BinRep, parse_success, ParseResult, propagate_failure_with_offset
 import textwrap
+
+
 class Field(NamedTuple):
     name: str
     data_type: type[BinRep]
@@ -45,3 +47,5 @@ class Struct(BinRep):
 
         return header + textwrap.indent(inner, "\t") + footer
 
+
+__all__ = ["Struct"]

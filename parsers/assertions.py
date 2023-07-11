@@ -86,3 +86,5 @@ class Assertion(Struct):
     ]
 
 
+__all__ = ["IPv4AddressList", "IPv6AddressList", "SubjectType", "ClaimType", "SubjectTypeEnum", "ClaimTypeEnum",
+           "DNSName", "DNSNameList", "SubjectInfo", "Claim", "ClaimList", "Assertion"]

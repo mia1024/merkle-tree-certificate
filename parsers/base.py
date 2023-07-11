@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import math
 from string import printable
-from typing import Literal, Union,Any
+from typing import Literal, Union, Any
 
 
 def bytes_needed(n: int) -> int:
@@ -97,3 +97,7 @@ class BinRep:
     def print(self) -> str:
         b = self.to_bytes()
         return f"{len(b)} {self.__class__.__name__} {printable_bytes_truncate(b, 80)}"
+
+
+__all__ = ["bytes_needed", "bytes_to_int", "int_to_bytes", "printable_bytes_truncate", "propagate_failure_with_offset",
+           "BinRep"]

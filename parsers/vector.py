@@ -1,15 +1,14 @@
 import textwrap
 
 from .base import (BinRep,
-                  int_to_bytes,
-                  bytes_to_int,
-                  bytes_needed,
-                  printable_bytes_truncate,
-                  parse_failure,
-                  parse_success,
-                  ParseResult,
-                  propagate_failure_with_offset
-                  )
+                   int_to_bytes,
+                   bytes_to_int,
+                   printable_bytes_truncate,
+                   parse_failure,
+                   parse_success,
+                   ParseResult,
+                   propagate_failure_with_offset
+                   )
 
 
 class Vector(BinRep):
@@ -88,3 +87,6 @@ class OpaqueVector(BinRep):
     def print(self) -> str:
         b = self.value
         return f"{len(b) + self.marker_size} {self.__class__.__name__} {printable_bytes_truncate(b, 80)}"
+
+
+__all__ = ["OpaqueVector", "Vector"]

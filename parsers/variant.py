@@ -29,3 +29,6 @@ class Variant(BinRep):
 
     def print(self) -> str:
         return self.value[0].print() + "\n" + textwrap.indent(self.value[1].print(), "\t")
+
+
+__all__ = ["Variant"]

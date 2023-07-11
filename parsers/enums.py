@@ -24,3 +24,5 @@ class Enum(BinRep):
 
     def print(self) -> str:
         return f"{self.size_in_bytes} {self.__class__.__name__} {self.value.name}({self.value})"
+
+__all__=["Enum"]
