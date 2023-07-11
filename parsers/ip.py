@@ -1,9 +1,9 @@
 import ipaddress
 
-from .base import BinRep, parse_success, ParseResult
+from .base import Parser, parse_success, ParseResult
 
 
-class IPv4Address(BinRep):
+class IPv4Address(Parser):
     def __init__(self, /, value: bytes | str) -> None:
         self.value = ipaddress.IPv4Address(value)
 
@@ -18,7 +18,7 @@ class IPv4Address(BinRep):
         return f"4 {self.__class__.__name__} {str(self.value)}"
 
 
-class IPv6Address(BinRep):
+class IPv6Address(Parser):
     def __init__(self, /, value: bytes | str) -> None:
         self.value = ipaddress.IPv6Address(value)
 

@@ -1,13 +1,12 @@
-from typing import NamedTuple
-from .base import BinRep, parse_success, ParseResult, propagate_failure_with_offset
+from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset
 import textwrap
 
 
-class Variant(BinRep):
-    vary_on_type: type[BinRep]
-    mapping: dict[BinRep, type[BinRep]]
+class Variant(Parser):
+    vary_on_type: type[Parser]
+    mapping: dict[Parser, type[Parser]]
 
-    def __init__(self, /, value: tuple[BinRep, BinRep]) -> None:
+    def __init__(self, /, value: tuple[Parser, Parser]) -> None:
         self.value = value
 
     def to_bytes(self) -> bytes:

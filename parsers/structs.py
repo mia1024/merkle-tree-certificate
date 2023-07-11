@@ -1,21 +1,21 @@
 from typing import NamedTuple
-from .base import BinRep, parse_success, ParseResult, propagate_failure_with_offset
+from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset
 import textwrap
 
 
 class Field(NamedTuple):
     name: str
-    data_type: type[BinRep]
+    data_type: type[Parser]
 
 
-class Struct(BinRep):
+class Struct(Parser):
     fields: list[Field] = []
 
-    def __init__(self, /, value: list[BinRep]) -> None:
+    def __init__(self, /, value: list[Parser]) -> None:
         if len(value) != len(self.fields):
             raise ValueError("Input to a struct must have the same length as struct definition")
         for v in value:
-            if not isinstance(v, BinRep):
+            if not isinstance(v, Parser):
                 raise ValueError(f"All members of the struct must be BinRep, got {repr(v)}")
         self.value = value.copy()
 

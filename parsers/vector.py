@@ -1,6 +1,6 @@
 import textwrap
 
-from .base import (BinRep,
+from .base import (Parser,
                    int_to_bytes,
                    bytes_to_int,
                    printable_bytes_truncate,
@@ -11,15 +11,15 @@ from .base import (BinRep,
                    )
 
 
-class Vector(BinRep):
-    data_type: type[BinRep]
+class Vector(Parser):
+    data_type: type[Parser]
     max_length: int
     min_length: int
     # marker size should always be bytes_needed(max_length), but this
     # cannot be computed without messing around with metaclasses
     marker_size: int
 
-    def __init__(self, /, value: list[BinRep]) -> None:
+    def __init__(self, /, value: list[Parser]) -> None:
         self.value = value.copy()
 
     def to_bytes(self) -> bytes:
@@ -62,7 +62,7 @@ class Vector(BinRep):
 
 
 # a special type of vector that can probably be implemented as a Vector of chars
-class OpaqueVector(BinRep):
+class OpaqueVector(Parser):
     min_length: int
     max_length: int
     # marker size should always be bytes_needed(max_length), but this

@@ -41,7 +41,7 @@ class ParseResultFail:
 @dataclass
 class ParseResultSuccess:
     success: Literal[True]
-    result: "BinRep"
+    result: "Parser"
     # if success is True, this is the length of bytestream consumed
     length: int
 
@@ -53,7 +53,7 @@ def parse_failure(offset_begin: int, offset_end: int, reason: str) -> ParseResul
     return ParseResultFail(False, offset_begin, offset_end, reason)
 
 
-def parse_success(obj: "BinRep", length: int) -> ParseResultSuccess:
+def parse_success(obj: "Parser", length: int) -> ParseResultSuccess:
     return ParseResultSuccess(True, obj, length)
 
 
@@ -61,7 +61,7 @@ def propagate_failure_with_offset(failure: ParseResultFail, offset: int) -> Pars
     return parse_failure(offset + failure.offset_begin, offset + failure.offset_end, failure.reason)
 
 
-class BinRep:
+class Parser:
     """
     Provides an interface to serialize and deserialize an object to bytes. Do not use directly.
     """
@@ -84,7 +84,7 @@ class BinRep:
         return self.to_bytes().hex()
 
     def __eq__(self, other: object):
-        if isinstance(other, BinRep):
+        if isinstance(other, Parser):
             return self.value == other.value
         return False
 
@@ -100,4 +100,4 @@ class BinRep:
 
 
 __all__ = ["bytes_needed", "bytes_to_int", "int_to_bytes", "printable_bytes_truncate", "propagate_failure_with_offset",
-           "BinRep"]
+           "Parser"]
