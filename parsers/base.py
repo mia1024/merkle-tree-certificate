@@ -61,10 +61,22 @@ def propagate_failure_with_offset(failure: ParseResultFail, offset: int) -> Pars
     return parse_failure(offset + failure.offset_begin, offset + failure.offset_end, failure.reason)
 
 
+class ParserValidationError(Exception): pass
+
+
 class Parser:
     """
     Provides an interface to serialize and deserialize an object to bytes. Do not use directly.
     """
+
+    class ValidationError(ParserValidationError): pass
+
+    def __new__(cls, *args, **kwargs):
+        """perform validation right after object initialization so subclasses don't have to explicitly call it"""
+        obj = super().__new__(cls)
+        obj.__init__(*args, **kwargs)
+        obj.validate()
+        return obj
 
     def __init__(self, /, value: Any) -> None:
         self.value = value
@@ -97,6 +109,10 @@ class Parser:
     def print(self) -> str:
         b = self.to_bytes()
         return f"{len(b)} {self.__class__.__name__} {printable_bytes_truncate(b, 80)}"
+
+    def validate(self) -> None:
+        """Subclasses should overwrite this function and raise a ValidationError from the class"""
+        pass
 
 
 __all__ = ["bytes_needed", "bytes_to_int", "int_to_bytes", "printable_bytes_truncate", "propagate_failure_with_offset",

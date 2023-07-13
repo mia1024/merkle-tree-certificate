@@ -84,6 +84,11 @@ class OpaqueVector(Parser):
 
         return parse_success(cls(data[cls.marker_size:size + cls.marker_size]), size + cls.marker_size)
 
+    def validate(self) -> None:
+        if not self.min_length <= len(self.value) <= self.max_length:
+            raise self.ValidationError(
+                f"Invalid data size {len(self.value)}. Must be between {self.min_length} and {self.max_length}")
+
     def print(self) -> str:
         b = self.value
         return f"{len(b) + self.marker_size} {self.__class__.__name__} {printable_bytes_truncate(b, 80)}"
