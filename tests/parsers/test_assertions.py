@@ -67,3 +67,4 @@ class TestAssertion(unittest.TestCase):
         )
         self.assertEqual(a, b)
         self.assertEqual(a.to_bytes(), b.to_bytes())
+        self.assertEqual(Assertion.parse(a.to_bytes()).result, b)
