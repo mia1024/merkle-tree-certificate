@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, Self
 from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset
 import textwrap
 
@@ -20,7 +20,7 @@ class Struct(Parser):
         self.value = value.copy()
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult:
+    def parse(cls, data: bytes) -> ParseResult[Self]:
         offset = 0
         parsed = []
         for f in cls.fields:

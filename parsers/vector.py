@@ -1,5 +1,5 @@
 import textwrap
-
+from typing import Self
 from .base import (Parser,
                    int_to_bytes,
                    bytes_to_int,
@@ -30,7 +30,7 @@ class Vector(Parser):
         return int_to_bytes(len(b), self.marker_size) + b
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult:
+    def parse(cls, data: bytes) -> ParseResult[Self]:
         size = bytes_to_int(data[:cls.marker_size])
         if not cls.min_length <= size <= cls.max_length:
             return parse_failure(0, cls.marker_size, f"Invalid vector size {size}")
@@ -77,7 +77,7 @@ class OpaqueVector(Parser):
         return int_to_bytes(len(self.value), self.marker_size) + self.value
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult:
+    def parse(cls, data: bytes) -> ParseResult[Self]:
         size = bytes_to_int(data[:cls.marker_size])
         if not cls.min_length <= size <= cls.max_length:
             return parse_failure(0, cls.marker_size, f"Invalid vector size {size}")

@@ -1,6 +1,6 @@
 from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset
 import textwrap
-
+from typing import Self
 
 class Variant(Parser):
     vary_on_type: type[Parser]
@@ -13,7 +13,7 @@ class Variant(Parser):
         return self.value[0].to_bytes() + self.value[1].to_bytes()
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult:
+    def parse(cls, data: bytes) -> ParseResult[Self]:
         vary_on = cls.vary_on_type.parse(data)
         if not vary_on.success:
             # propagating with an offset of 0

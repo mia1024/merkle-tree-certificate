@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import math
 from string import printable
-from typing import Literal, Union, Any
+from typing import Literal, Any, TypeVar, Generic, Self
 
 
 def bytes_needed(n: int) -> int:
@@ -30,6 +30,9 @@ def printable_bytes_truncate(b: bytes, limit: int) -> str:
     return s
 
 
+T = TypeVar("T", bound="Parser")
+
+
 @dataclass
 class ParseResultFail:
     success: Literal[False]
@@ -39,14 +42,14 @@ class ParseResultFail:
 
 
 @dataclass
-class ParseResultSuccess:
+class ParseResultSuccess(Generic[T]):
     success: Literal[True]
-    result: "Parser"
+    result: T
     # if success is True, this is the length of bytestream consumed
     length: int
 
 
-ParseResult = Union[ParseResultSuccess, ParseResultFail]
+ParseResult = ParseResultSuccess[T] | ParseResultFail
 
 
 def parse_failure(offset_begin: int, offset_end: int, reason: str) -> ParseResultFail:
@@ -86,7 +89,7 @@ class Parser:
         raise NotImplementedError("Do not use this class directly")
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult:
+    def parse(cls, data: bytes) -> ParseResult[Self]:
         raise NotImplementedError("Do not use this class directly")
 
     def __repr__(self) -> str:

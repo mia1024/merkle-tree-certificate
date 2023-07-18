@@ -1,6 +1,6 @@
 import enum
 from .base import Parser, int_to_bytes, bytes_to_int, parse_failure, parse_success, ParseResult
-
+from typing import Self
 
 class EnumMeta(type):
     def __new__(cls, name, bases, dict, **kwargs):
@@ -23,7 +23,7 @@ class Enum(Parser, metaclass=EnumMeta):
         return int_to_bytes(self.value, self.size_in_bytes)
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult:
+    def parse(cls, data: bytes) -> ParseResult[Self]:
         n = bytes_to_int(data[:cls.size_in_bytes])
         try:
             obj = cls(n)
