@@ -8,22 +8,45 @@ class Field(NamedTuple):
     data_type: type[Parser]
 
 
-class Struct(Parser):
-    fields: list[Field] = []
+class StructMeta(type):
+    def __new__(cls, name, bases, attrs, **kwargs):
+
+        annotations = attrs.get("__annotations__")
+        if annotations is None:
+            raise AttributeError("Struct is defined without any field")
+
+        fields = []
+        slots = []
+
+        for name, data_type in annotations.items():
+            if name == "_fields":
+                continue
+            if not isinstance(data_type, type):
+                raise TypeError("Struct fields must be a class")
+            if not issubclass(data_type, Parser):
+                raise TypeError("Struct fields must be a subclass of parser")
+
+            fields.append(Field(name, data_type))
+            slots.append(name)
+
+        # use slots to reduce memory footprint and slightly increase access speed
+        cls_ = super().__new__(cls, name, bases, {**attrs, "__slots__": slots}, **kwargs)
+        cls_._fields = fields
+
+        return cls_
+
+
+class Struct(Parser, metaclass=StructMeta):
+    _fields: list[Field] = []
 
     def __init__(self, /, value: list[Parser]) -> None:
-        if len(value) != len(self.fields):
-            raise ValueError("Input to a struct must have the same length as struct definition")
-        for v in value:
-            if not isinstance(v, Parser):
-                raise ValueError(f"All members of the struct must be BinRep, got {repr(v)}")
         self.value = value.copy()
 
     @classmethod
     def parse(cls, data: bytes) -> ParseResult[Self]:
         offset = 0
         parsed = []
-        for f in cls.fields:
+        for f in cls._fields:
             res = f.data_type.parse(data[offset:])
             if not res.success:
                 return propagate_failure_with_offset(res, offset)
@@ -46,6 +69,15 @@ class Struct(Parser):
             inner += v.print() + "\n"
 
         return header + textwrap.indent(inner, "\t") + footer
+
+    def validate(self) -> None:
+        if len(self.value) != len(self._fields):
+            raise ValueError("Input to a struct must have the same length as struct definition")
+        for i, v in enumerate(self.value):
+            name, data_type = self._fields[i]
+            if not isinstance(v, data_type):
+                raise ValueError(f"Item {i} of input is not of type {data_type.__name__}")
+            setattr(self, self._fields[i].name, v)
 
 
 __all__ = ["Struct"]

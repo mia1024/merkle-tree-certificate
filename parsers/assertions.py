@@ -7,7 +7,7 @@ from .ip import IPv6Address, IPv4Address
 from .base import bytes_needed
 from .enums import Enum
 from .variant import Variant
-from .structs import Struct, Field
+from .structs import Struct
 from .utils import sort_dns_names
 
 
@@ -110,11 +110,9 @@ class ClaimList(Vector):
 
 
 class Assertion(Struct):
-    fields = [
-        Field("subject_type", SubjectType),
-        Field("subject_info", SubjectInfo),
-        Field("claims", ClaimList)
-    ]
+    subject_type: SubjectType
+    subject_info: SubjectInfo
+    claims: ClaimList
 
 
 def create_assertion(subject_info: str, *, ipv4_addrs: Iterable[str] | None = None,

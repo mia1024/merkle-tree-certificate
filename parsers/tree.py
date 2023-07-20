@@ -1,12 +1,11 @@
-import enum
+import enum, hashlib
 from .enums import Enum
 from .structs import Struct, Field
-from .vector import OpaqueVector
-from .base import bytes_needed, parse_success, ParseResult, int_to_bytes, propagate_failure_with_offset
+from .vector import OpaqueVector, Array
+from .base import bytes_needed, parse_success, ParseResult, propagate_failure_with_offset
 from .assertions import Assertion
 from .numerical import UInt8, UInt32, UInt64
 from .base import Parser
-from hashlib import sha256
 from typing import Sequence, Self
 from math import log2, ceil
 
@@ -25,10 +24,8 @@ class Distinguisher(Enum):
     HashAssertionInput: "Distinguisher"
 
 
-class SHA256Hash(OpaqueVector):
-    min_length = 32
-    max_length = 32
-    marker_size = bytes_needed(max_length)
+class SHA256Hash(Array):
+    length = 32
 
 
 class IssuerID(OpaqueVector):
@@ -77,67 +74,38 @@ class HashHead(Parser):
 
 
 class HashEmptyInput(Struct):
-    fields = [
-        Field("hash_head", HashHead),
-        Field("index", UInt64),
-        Field("level", UInt8)
-    ]
+    hash_head: HashHead
+    index: UInt64
+    level: UInt8
 
 
 class HashNodeInput(Struct):
-    fields = [
-        Field("hash_head", HashHead),
-        Field("index", UInt64),
-        Field("level", UInt8),
-        Field("left", SHA256Hash),
-        Field("right", SHA256Hash)
-    ]
+    hash_head: HashHead
+    index: UInt64
+    level: UInt8
+    left: SHA256Hash
+    right: SHA256Hash
 
 
 class HashAssertionInput(Struct):
-    fields = [
-        Field("hash_head", HashHead),
-        Field("index", UInt64),
-        Field("assertion", Assertion)
-    ]
+    hash_head: HashHead
+    index: UInt64
+    assertion: Assertion
 
 
-def hash_empty(hasher, level: int, index: int) -> bytes:
-    hasher = hasher.copy()
-    hasher.update(int_to_bytes(index, 8))
-    hasher.update(int_to_bytes(level, 1))
-    return hasher.digest()
-
-
-def hash_node(hasher, left: bytes, right: bytes, level: int, index: int) -> bytes:
-    hasher = hasher.copy()
-    hasher.update(int_to_bytes(index, 8))
-    hasher.update(int_to_bytes(level, 1))
-    hasher.update(left)
-    hasher.update(right)
-    return hasher.digest()
-
-
-def hash_assertion(hasher, assertion: Assertion, index: int) -> bytes:
-    hasher = hasher.copy()
-    hasher.update(int_to_bytes(index, 8))
-    hasher.update(assertion.to_bytes())
+def sha256(node: Parser) -> bytes:
+    hasher = hashlib.sha256()
+    hasher.update(node.to_bytes())
     return hasher.digest()
 
 
 def create_merkle_tree(assertions: Sequence[Assertion], issuer_id: bytes, batch_number: int):
-    """Build Merkle tree as section 5.4.1"""
+    """Build Merkle tree as section 5.4.1 of the specification"""
     n = len(assertions)
     l = ceil(log2(n)) + 1
 
-    assertion_hasher = sha256()
+    nodes: dict[tuple[int, int], Parser] = {}
+
     assertion_head = HashHead((Distinguisher.HashAssertionInput, IssuerID(issuer_id), UInt32(batch_number)))
-    assertion_hasher.update(assertion_head.to_bytes())
-
-    empty_hasher = sha256()
     empty_head = HashHead((Distinguisher.HashEmptyInput, IssuerID(issuer_id), UInt32(batch_number)))
-    empty_hasher.update(empty_head.to_bytes())
-
-    node_hasher = sha256()
     node_head = HashHead((Distinguisher.HashNodeInput, IssuerID(issuer_id), UInt32(batch_number)))
-    node_hasher.update(node_head.to_bytes())

@@ -22,12 +22,33 @@ class TestAssertion(unittest.TestCase):
             )
         ]
         )
-
         b = Assertion.parse(a.to_bytes())
         self.assertTrue(b.success)
         self.assertEqual(b.result, a)
         self.assertEqual(b.length, len(a))
-        self.assertEqual(len(a), 77)
+        self.assertEqual(a.to_bytes(),
+                         # SubjectType.tls
+                         b"\x00\x00"
+                         # vector of length 0x11 and content "some subject info"
+                         b"\x00\x11some subject info"
+                         # vector of length 0x36
+                         b"\x00\x36"
+                         # ClaimType.IPv4
+                         b"\x00\x02"
+                         # vector of length 0x08 (2 IPv4 address)
+                         b"\x00\x08"
+                         # IP Address 1.1.1.1
+                         b"\x01\x01\x01\x01"
+                         # IP Address 1.2.3.4
+                         b"\x01\x02\x03\x04"          
+                         # ClaimType.dns
+                         b"\x00\x00"
+                         # vector of length 0x26
+                         b"\x00\x26"
+                         # vector of length 0x0e and content of "cloudflare.com"
+                         b"\x0ecloudflare.com"
+                         # vector of length 0x16 and content of "cloudflareresearch.com"
+                         b"\x16cloudflareresearch.com")
 
     def test_assertion_ip_ordering(self):
         with self.assertRaises(IPv4AddressList.ValidationError):

@@ -94,4 +94,27 @@ class OpaqueVector(Parser):
         return f"{len(b) + self.marker_size} {self.__class__.__name__} {printable_bytes_truncate(b, 80)}"
 
 
-__all__ = ["OpaqueVector", "Vector"]
+class Array(Parser):
+    length: int
+
+    def __init__(self, /, value: bytes) -> None:
+        self.value = value
+
+    def to_bytes(self) -> bytes:
+        return self.value
+
+    @classmethod
+    def parse(cls, data: bytes) -> ParseResult[Self]:
+        return parse_success(cls(data[:cls.length]), cls.length)
+
+    def validate(self) -> None:
+        if len(self.value) != self.length:
+            raise self.ValidationError(
+                f"Invalid data size {len(self.value)}. Must be of length {self.length}")
+
+    def print(self) -> str:
+        b = self.value
+        return f"{self.length} Array {self.__class__.__name__} {printable_bytes_truncate(b, 80)}"
+
+
+__all__ = ["OpaqueVector", "Vector", "Array"]
