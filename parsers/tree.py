@@ -7,8 +7,6 @@ from .assertions import Assertion
 from .numerical import UInt8, UInt32, UInt64
 from .base import Parser
 from typing import Sequence, Self
-from math import log2, ceil
-
 
 class DistinguisherEnum(enum.IntEnum):
     HashEmptyInput = 0
@@ -122,7 +120,8 @@ def create_merkle_tree(assertions: Sequence[Assertion], issuer_id: bytes, batch_
         assertion_node = HashAssertionInput(assertion_head, UInt64(0), assertions[0])
         return {(0, 0): assertion_node}, sha256(assertion_node)
 
-    l = ceil(log2(n)) + 1
+    # avoid using log2 because it might cause floating-point errors when n is large
+    l = n.bit_length() + 1
 
     nodes: NodesDict = {}
 

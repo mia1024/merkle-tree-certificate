@@ -1,11 +1,12 @@
 from dataclasses import dataclass
-import math
 from string import printable
 from typing import Literal, Any, TypeVar, Generic, Self
+from math import ceil
 
 
 def bytes_needed(n: int) -> int:
-    return math.ceil(math.ceil(math.log2(n + 1)) / 8)
+    # avoid using log2 because it might cause floating-point errors when n is large
+    return ceil(n.bit_length() / 8)
 
 
 def bytes_to_int(b: bytes) -> int:
@@ -77,7 +78,7 @@ class Parser:
     def __new__(cls, *args, **kwargs):
         """perform validation right after object initialization so subclasses don't have to explicitly call it"""
         obj = super().__new__(cls)
-        obj.__init__(*args, **kwargs) # type: ignore
+        obj.__init__(*args, **kwargs)  # type: ignore
         obj.validate()
         return obj
 
