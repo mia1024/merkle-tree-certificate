@@ -23,7 +23,7 @@ class Integer(Parser):
         return f"{self.size_in_bytes} {self.__class__.__name__} {self.value}"
 
     def validate(self) -> None:
-        if not 0 <= self.value <= 2 ** self.size_in_bytes - 1:
+        if not 0 <= self.value <= 2 ** (8 * self.size_in_bytes) - 1:
             raise self.ValidationError(f"{self.value} cannot fit into a uint{self.size_in_bytes}")
 
 

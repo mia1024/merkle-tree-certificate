@@ -18,7 +18,7 @@ class IPv4AddressList(Vector):
     marker_size = bytes_needed(max_length)
 
     def validate(self) -> None:
-        if sorted(self.value, key=lambda v: v.value) != self.value:
+        if tuple(sorted(self.value, key=lambda v: v.value)) != self.value:
             raise self.ValidationError("IP addresses must be in lexical order")
 
 
@@ -29,7 +29,7 @@ class IPv6AddressList(Vector):
     marker_size = bytes_needed(max_length)
 
     def validate(self) -> None:
-        if sorted(self.value, key=lambda v: v.value) != self.value:
+        if tuple(sorted(self.value, key=lambda v: v.value)) != self.value:
             raise self.ValidationError("IP addresses must be in lexical order")
 
 
@@ -106,7 +106,7 @@ class ClaimList(Vector):
     data_type = Claim
     min_length = 0
     max_length = 2 ** 16 - 1
-    marker_size = bytes_needed(2 ** 16 - 1)
+    marker_size = bytes_needed(max_length)
 
 
 class Assertion(Struct):
@@ -122,26 +122,26 @@ def create_assertion(subject_info: str, *, ipv4_addrs: Iterable[str] | None = No
     claims: list[Claim] = []
 
     if dns_names is not None:
-        claims.append(Claim((ClaimType.dns, DNSNameList(
-            list(map(DNSName, map(lambda s: s.encode(), sort_dns_names(dns_names))))))))
+        claims.append(Claim((ClaimType.dns, DNSNameList(*
+                                                        map(DNSName,
+                                                            map(lambda s: s.encode(), sort_dns_names(dns_names)))))))
 
     if dns_wild_cards is not None:
         claims.append(Claim(
             (ClaimType.dns_wildcard,
-             DNSNameList(list(map(DNSName, map(lambda s: s.encode(), sort_dns_names(dns_wild_cards))))))))
+             DNSNameList(*map(DNSName, map(lambda s: s.encode(), sort_dns_names(dns_wild_cards)))))))
 
     if ipv4_addrs is not None:
         claims.append(
             Claim((ClaimType.ipv4, IPv4AddressList(
-                list(map(IPv4Address, sorted(ipv4_addrs, key=lambda a: ipaddress.IPv4Address(a))))))))
+                *map(IPv4Address, sorted(ipv4_addrs, key=lambda a: ipaddress.IPv4Address(a)))))))
 
     if ipv6_addrs is not None:
         claims.append(
             Claim((ClaimType.ipv6, IPv6AddressList(
-                list(map(IPv6Address, sorted(ipv6_addrs, key=lambda a: ipaddress.IPv6Address(a))))))))
+                *map(IPv6Address, sorted(ipv6_addrs, key=lambda a: ipaddress.IPv6Address(a)))))))
 
-    # looks like mypy has a bug on the next line
-    return Assertion([SubjectType.tls, subject_info_bytes, ClaimList(claims)])  # type: ignore
+    return Assertion(SubjectType.tls, subject_info_bytes, ClaimList(*claims))
 
 
 __all__ = ["IPv4AddressList", "IPv6AddressList", "SubjectType", "ClaimType",

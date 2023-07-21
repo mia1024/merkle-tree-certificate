@@ -18,20 +18,20 @@ class StructMeta(type):
         fields = []
         slots = []
 
-        for name, data_type in annotations.items():
-            if name == "_fields":
+        for field_name, data_type in annotations.items():
+            if field_name == "_fields":
                 continue
             if not isinstance(data_type, type):
                 raise TypeError("Struct fields must be a class")
             if not issubclass(data_type, Parser):
                 raise TypeError("Struct fields must be a subclass of parser")
 
-            fields.append(Field(name, data_type))
-            slots.append(name)
+            fields.append(Field(field_name, data_type))
+            slots.append(field_name)
 
         # use slots to reduce memory footprint and slightly increase access speed
         cls_ = super().__new__(cls, name, bases, {**attrs, "__slots__": slots}, **kwargs)
-        cls_._fields = fields
+        cls_._fields = fields # type: ignore[attr-defined]
 
         return cls_
 
@@ -39,8 +39,8 @@ class StructMeta(type):
 class Struct(Parser, metaclass=StructMeta):
     _fields: list[Field] = []
 
-    def __init__(self, /, value: list[Parser]) -> None:
-        self.value = value.copy()
+    def __init__(self, /, *value: Parser) -> None:
+        self.value = value
 
     @classmethod
     def parse(cls, data: bytes) -> ParseResult[Self]:
@@ -53,7 +53,7 @@ class Struct(Parser, metaclass=StructMeta):
             offset += res.length
             parsed.append(res.result)
 
-        return parse_success(cls(parsed), offset)
+        return parse_success(cls(*parsed), offset)
 
     def to_bytes(self) -> bytes:
         b = b""
@@ -76,7 +76,8 @@ class Struct(Parser, metaclass=StructMeta):
         for i, v in enumerate(self.value):
             name, data_type = self._fields[i]
             if not isinstance(v, data_type):
-                raise ValueError(f"Item {i} of input is not of type {data_type.__name__}")
+                raise ValueError(
+                    f"Item {i} of input to {self.__class__.__name__} is not of type {data_type.__name__} (found {v.__class__.__name__})")
             setattr(self, self._fields[i].name, v)
 
 

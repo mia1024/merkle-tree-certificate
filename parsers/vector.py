@@ -19,8 +19,8 @@ class Vector(Parser):
     # cannot be computed without messing around with metaclasses
     marker_size: int
 
-    def __init__(self, /, value: list[Parser]) -> None:
-        self.value = value.copy()
+    def __init__(self, /, *value:Parser) -> None:
+        self.value = value
 
     def to_bytes(self) -> bytes:
         # vector size marker then value
@@ -49,7 +49,7 @@ class Vector(Parser):
         if offset - cls.marker_size > size:
             return parse_failure(size, offset, "Extra data read")
 
-        return parse_success(cls(l), size + cls.marker_size)
+        return parse_success(cls(*l), size + cls.marker_size)
 
     def print(self) -> str:
         header = "-" * 20 + f"Vector {self.__class__.__name__} ({len(self)})" + "-" * 20 + "\n"

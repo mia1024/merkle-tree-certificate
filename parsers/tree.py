@@ -2,7 +2,7 @@ import enum, hashlib
 from .enums import Enum
 from .structs import Struct, Field
 from .vector import OpaqueVector, Array
-from .base import bytes_needed, parse_success, ParseResult, propagate_failure_with_offset
+from .base import parse_success, ParseResult, propagate_failure_with_offset, bytes_needed
 from .assertions import Assertion
 from .numerical import UInt8, UInt32, UInt64
 from .base import Parser
@@ -31,6 +31,7 @@ class SHA256Hash(Array):
 class IssuerID(OpaqueVector):
     min_length = 0
     max_length = 32
+    marker_size = bytes_needed(max_length)
 
 
 class HashHead(Parser):
@@ -93,19 +94,59 @@ class HashAssertionInput(Struct):
     assertion: Assertion
 
 
-def sha256(node: Parser) -> bytes:
+def sha256(node: Parser) -> SHA256Hash:
     hasher = hashlib.sha256()
     hasher.update(node.to_bytes())
-    return hasher.digest()
+    return SHA256Hash(hasher.digest())
 
 
-def create_merkle_tree(assertions: Sequence[Assertion], issuer_id: bytes, batch_number: int):
+TreeNodes = HashNodeInput | HashAssertionInput | HashEmptyInput
+# (level, index) -> node
+NodesDict = dict[tuple[int, int], TreeNodes]
+
+
+def create_merkle_tree(assertions: Sequence[Assertion], issuer_id: bytes, batch_number: int) -> tuple[
+    NodesDict, SHA256Hash]:
     """Build Merkle tree as section 5.4.1 of the specification"""
-    n = len(assertions)
-    l = ceil(log2(n)) + 1
-
-    nodes: dict[tuple[int, int], Parser] = {}
 
     assertion_head = HashHead((Distinguisher.HashAssertionInput, IssuerID(issuer_id), UInt32(batch_number)))
     empty_head = HashHead((Distinguisher.HashEmptyInput, IssuerID(issuer_id), UInt32(batch_number)))
     node_head = HashHead((Distinguisher.HashNodeInput, IssuerID(issuer_id), UInt32(batch_number)))
+
+    n = len(assertions)
+    if n == 0:
+        empty_node = HashEmptyInput(empty_head, UInt64(0), UInt8(0))
+        return {(0, 0): empty_node}, sha256(empty_node)
+
+    if n == 1:
+        assertion_node = HashAssertionInput(assertion_head, UInt64(0), assertions[0])
+        return {(0, 0): assertion_node}, sha256(assertion_node)
+
+    l = ceil(log2(n)) + 1
+
+    nodes: NodesDict = {}
+
+    for j in range(n):
+        a = HashAssertionInput(assertion_head, UInt64(j), assertions[j])
+        nodes[0, j] = a
+
+    if n % 2 == 1:
+        nodes[0, n] = HashEmptyInput(empty_head, UInt64(n), UInt8(0))
+        prev_nodes = n + 1
+    else:
+        prev_nodes = n
+
+    for i in range(1, l):
+        current_nodes = prev_nodes // 2
+        for j in range(current_nodes):
+            nodes[i, j] = HashNodeInput(node_head, UInt64(j), UInt8(i), sha256(nodes[i - 1, j * 2]),
+                                        sha256(nodes[i - 1, j * 2 + 1]))
+
+        # append empty node if not at root
+        if current_nodes % 2 == 1 and i != l - 1:
+            nodes[i, current_nodes] = HashEmptyInput(empty_head, UInt64(current_nodes), UInt8(i))
+            prev_nodes = current_nodes + 1
+        else:
+            prev_nodes = current_nodes
+
+    return nodes, sha256(nodes[l - 1, 0])

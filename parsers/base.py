@@ -77,7 +77,7 @@ class Parser:
     def __new__(cls, *args, **kwargs):
         """perform validation right after object initialization so subclasses don't have to explicitly call it"""
         obj = super().__new__(cls)
-        obj.__init__(*args, **kwargs)
+        obj.__init__(*args, **kwargs) # type: ignore
         obj.validate()
         return obj
 
