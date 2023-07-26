@@ -21,8 +21,9 @@ class TestAssertion(unittest.TestCase):
             )
         )
         b = Assertion.parse(a.to_bytes())
-        self.assertTrue(b.success)
-
+        # apparently mypy cannot infer the type of b if we use
+        # self.assertEqual, so we'll have to use assert instead
+        assert b.success
         self.assertEqual(b.result, a)
         self.assertEqual(b.length, len(a))
         self.assertEqual(a.to_bytes(),
@@ -84,4 +85,8 @@ class TestAssertion(unittest.TestCase):
         )
         self.assertEqual(a, b)
         self.assertEqual(a.to_bytes(), b.to_bytes())
-        self.assertEqual(Assertion.parse(a.to_bytes()).result, b)
+        c = Assertion.parse(a.to_bytes())
+        # apparently mypy cannot infer the type of b if we use
+        # self.assertEqual, so we'll have to use assert instead
+        assert c.success
+        self.assertEqual(c.result, b)
