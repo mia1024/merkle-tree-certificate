@@ -7,19 +7,29 @@ from .base import (Parser,
                    parse_failure,
                    parse_success,
                    ParseResult,
-                   propagate_failure_with_offset
+                   propagate_failure_with_offset,
+                   bytes_needed
                    )
 
 
-class Vector(Parser):
+class VectorMeta(type):
+    def __new__(cls, name, bases, attrs, **kwargs):
+        if not ("min_length" in attrs and "max_length" in attrs):
+            raise AttributeError("Improperly defined vector class. min_length and max_length must both be present")
+        if "marker_size" in attrs:
+            raise AttributeError("Vector subclasses should not define marker_size")
+        marker_size = bytes_needed(attrs["max_length"])
+        return super().__new__(cls, name, bases, {"marker_size": marker_size, **attrs}, **kwargs)
+
+
+class Vector(Parser, metaclass=VectorMeta):
     data_type: type[Parser]
-    max_length: int
-    min_length: int
-    # marker size should always be bytes_needed(max_length), but this
-    # cannot be computed without messing around with metaclasses
+    max_length: int = 1
+    min_length: int = 1
+    # this is computed in metaclass
     marker_size: int
 
-    def __init__(self, /, *value:Parser) -> None:
+    def __init__(self, /, *value: Parser) -> None:
         self.value = value
 
     def to_bytes(self) -> bytes:
@@ -62,11 +72,10 @@ class Vector(Parser):
 
 
 # a special type of vector that can probably be implemented as a Vector of chars
-class OpaqueVector(Parser):
-    min_length: int
-    max_length: int
-    # marker size should always be bytes_needed(max_length), but this
-    # cannot be computed without messing around with metaclasses
+class OpaqueVector(Parser, metaclass=VectorMeta):
+    min_length: int = 1
+    max_length: int = 1
+    # this is computed in metaclass
     marker_size: int
 
     def __init__(self, /, value: bytes) -> None:

@@ -3,10 +3,10 @@ from .base import Parser, int_to_bytes, bytes_to_int, parse_failure, parse_succe
 from typing import Self
 
 class EnumMeta(type):
-    def __new__(cls, name, bases, dict, **kwargs):
-        cls_ = super().__new__(cls, name, bases, dict, **kwargs)
-        if "EnumClass" in dict:
-            for k, v in dict["EnumClass"].__members__.items():
+    def __new__(cls, name, bases, attrs, **kwargs):
+        cls_ = super().__new__(cls, name, bases, attrs, **kwargs)
+        if "EnumClass" in attrs:
+            for k, v in attrs["EnumClass"].__members__.items():
                 setattr(cls_, k, cls_(v))
         return cls_
 

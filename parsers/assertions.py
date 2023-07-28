@@ -4,7 +4,6 @@ import ipaddress
 from typing import Iterable
 from .vector import Vector, OpaqueVector
 from .ip import IPv6Address, IPv4Address
-from .base import bytes_needed
 from .enums import Enum
 from .variant import Variant
 from .structs import Struct
@@ -15,7 +14,6 @@ class IPv4AddressList(Vector):
     data_type = IPv4Address
     min_length = 4
     max_length = 2 ** 16 - 1
-    marker_size = bytes_needed(max_length)
 
     def validate(self) -> None:
         if tuple(sorted(self.value, key=lambda v: v.value)) != self.value:
@@ -26,7 +24,6 @@ class IPv6AddressList(Vector):
     data_type = IPv6Address
     min_length = 16
     max_length = 2 ** 16 - 1
-    marker_size = bytes_needed(max_length)
 
     def validate(self) -> None:
         if tuple(sorted(self.value, key=lambda v: v.value)) != self.value:
@@ -64,7 +61,6 @@ class ClaimType(Enum):
 class DNSName(OpaqueVector):
     min_length = 1
     max_length = 255
-    marker_size = bytes_needed(max_length)
 
     def validate(self) -> None:
         super().validate()
@@ -76,7 +72,6 @@ class DNSNameList(Vector):
     data_type = DNSName
     min_length = 1
     max_length = 2 ** 16 - 1
-    marker_size = bytes_needed(max_length)
 
     def validate(self) -> None:
         super().validate()
@@ -89,7 +84,6 @@ class DNSNameList(Vector):
 class SubjectInfo(OpaqueVector):
     min_length = 1
     max_length = 2 ** 16 - 1
-    marker_size = bytes_needed(max_length)
 
 
 class Claim(Variant):
@@ -106,7 +100,6 @@ class ClaimList(Vector):
     data_type = Claim
     min_length = 0
     max_length = 2 ** 16 - 1
-    marker_size = bytes_needed(max_length)
 
 
 class Assertion(Struct):

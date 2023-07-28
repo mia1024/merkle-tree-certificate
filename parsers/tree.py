@@ -30,7 +30,6 @@ class SHA256Hash(Array):
 class IssuerID(OpaqueVector):
     min_length = 0
     max_length = 32
-    marker_size = bytes_needed(max_length)
 
 
 class HashHead(Parser):
