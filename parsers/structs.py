@@ -1,5 +1,7 @@
+import types
+import typing
 from typing import NamedTuple, Self
-from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset
+from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset, parse_failure
 import textwrap
 
 
@@ -21,17 +23,22 @@ class StructMeta(type):
         for field_name, data_type in annotations.items():
             if field_name == "_fields":
                 continue
-            if not isinstance(data_type, type):
-                raise TypeError("Struct fields must be a class")
-            if not issubclass(data_type, Parser):
-                raise TypeError("Struct fields must be a subclass of parser")
+            if isinstance(data_type, types.UnionType):
+                for t in typing.get_args(data_type):
+                    if not issubclass(t, Parser):
+                        raise TypeError("Member of union must be a subclass of parser")
+            else:
+                if not isinstance(data_type, type):
+                    raise TypeError("Struct fields must be a class or a union")
+                if not issubclass(data_type, Parser):
+                    raise TypeError("Struct fields must be a subclass of parser")
 
             fields.append(Field(field_name, data_type))
             slots.append(field_name)
 
         # use slots to reduce memory footprint and slightly increase access speed
         cls_ = super().__new__(cls, name, bases, {**attrs, "__slots__": slots}, **kwargs)
-        cls_._fields = fields # type: ignore[attr-defined]
+        cls_._fields = fields  # type: ignore[attr-defined]
 
         return cls_
 
@@ -40,18 +47,28 @@ class Struct(Parser, metaclass=StructMeta):
     _fields: list[Field] = []
 
     def __init__(self, /, *value: Parser) -> None:
-        self.value = value
+        self.value = list(value)
 
     @classmethod
     def parse(cls, data: bytes) -> ParseResult[Self]:
         offset = 0
         parsed = []
         for f in cls._fields:
-            res = f.data_type.parse(data[offset:])
-            if not res.success:
-                return propagate_failure_with_offset(res, offset)
-            offset += res.length
-            parsed.append(res.result)
+            if isinstance(f.data_type, types.UnionType):
+                for d_type in typing.get_args(f.data_type):
+                    res = d_type.parse(data[offset:])
+                    if res.success:
+                        offset += res.length
+                        parsed.append(res.result)
+                        break
+                else:
+                    return parse_failure(offset, offset, "Cannot decode data as any datatype of the union")
+            else:
+                res = f.data_type.parse(data[offset:])
+                if not res.success:
+                    return propagate_failure_with_offset(res, offset)
+                offset += res.length
+                parsed.append(res.result)
 
         return parse_success(cls(*parsed), offset)
 
@@ -70,6 +87,19 @@ class Struct(Parser, metaclass=StructMeta):
 
         return header + textwrap.indent(inner, "\t") + footer
 
+    def __getattr__(self, item: str):
+        for i, f in enumerate(self._fields):
+            if f.name == item:
+                return self.value[i]
+        else:
+            raise AttributeError
+
+    def __setattr__(self, key, value):
+        for i, f in enumerate(self._fields):
+            if f.name == key:
+                self.value[i] = value
+        super().__setattr__(key,value)
+
     def validate(self) -> None:
         if len(self.value) != len(self._fields):
             raise ValueError("Input to a struct must have the same length as struct definition")
@@ -78,7 +108,6 @@ class Struct(Parser, metaclass=StructMeta):
             if not isinstance(v, data_type):
                 raise ValueError(
                     f"Item {i} of input to {self.__class__.__name__} is not of type {data_type.__name__} (found {v.__class__.__name__})")
-            setattr(self, self._fields[i].name, v)
 
 
 __all__ = ["Struct"]

@@ -2,7 +2,7 @@ import enum, hashlib
 from .enums import Enum
 from .structs import Struct
 from .vector import OpaqueVector, Array
-from .base import parse_success, ParseResult, propagate_failure_with_offset, bytes_needed
+from .base import parse_success, ParseResult, propagate_failure_with_offset
 from .assertions import Assertion
 from .numerical import UInt8, UInt32, UInt64
 from .base import Parser
@@ -95,7 +95,7 @@ class HashAssertionInput(Struct):
     assertion: Assertion
 
 
-def sha256(node: Parser) -> SHA256Hash:
+def sha256(node: HashEmptyInput | HashNodeInput | HashAssertionInput) -> SHA256Hash:
     hasher = hashlib.sha256()
     hasher.update(node.to_bytes())
     return SHA256Hash(hasher.digest())
@@ -141,8 +141,8 @@ def create_merkle_tree(assertions: Sequence[Assertion], issuer_id: bytes, batch_
         nodes.append([])
         for j in range(current_nodes):
             nodes[i].append(sha256(
-                HashNodeInput(node_head, UInt64(j), UInt8(i), sha256(nodes[i - 1][j * 2]),
-                              sha256(nodes[i - 1][j * 2 + 1]))
+                HashNodeInput(node_head, UInt64(j), UInt8(i), nodes[i - 1][j * 2],
+                              nodes[i - 1][j * 2 + 1])
             ))
 
         # append empty node if not at root
