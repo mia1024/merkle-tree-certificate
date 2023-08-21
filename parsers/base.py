@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from string import printable
 from typing import Literal, Any, TypeVar, Generic, Self
 from math import ceil
 
@@ -23,11 +22,11 @@ def printable_bytes_truncate(b: bytes, limit: int) -> str:
 
     s = ""
     for c in b:
-        char = chr(c)
-        if char not in printable:
+        if not 33 <= c <= 126:
             s += "_"
         else:
-            s += char
+            s += chr(c)
+
     return s
 
 

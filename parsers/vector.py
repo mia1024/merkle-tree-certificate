@@ -10,6 +10,7 @@ from .base import (Parser,
                    propagate_failure_with_offset,
                    bytes_needed
                    )
+import io
 
 
 class VectorMeta(type):
@@ -33,11 +34,15 @@ class Vector(Parser, metaclass=VectorMeta):
         self.value = value
 
     def to_bytes(self) -> bytes:
-        # vector size marker then value
-        b = b""
+        # using BytesIO because repeated byte concatenation is slow
+        bio = io.BytesIO()
         for item in self.value:
-            b += item.to_bytes()
+            bio.write(item.to_bytes())
+
+        b = bio.getvalue()
+
         return int_to_bytes(len(b), self.marker_size) + b
+
 
     @classmethod
     def parse(cls, data: bytes) -> ParseResult[Self]:
@@ -69,6 +74,12 @@ class Vector(Parser, metaclass=VectorMeta):
             inner += v.print() + "\n"
 
         return header + textwrap.indent(inner, "\t") + footer
+
+    def validate(self) -> None:
+        for i, v in enumerate(self.value):
+            if not isinstance(v, self.data_type):
+                raise ValueError(
+                    f"Input item {i} to {self.__class__.__name__} is not of type {self.data_type.__name__}. Found {type(v).__name__}")
 
 
 # a special type of vector that can probably be implemented as a Vector of chars

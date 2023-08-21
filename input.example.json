@@ -1,0 +1,17 @@
+[
+  {
+    "dns": [
+      "cloudflare.com",
+      "www.cloudflare.com"
+    ],
+    "dnsWildcard": [
+      "cloudflare.com"
+    ],
+    "ipv4Addr": [
+      "1.1.1.1"
+    ],
+    "ipv6Addr": [],
+    "subjectType": "tls",
+    "subjectInfo": "AftY9Q6hlhN6i1iDUZ6VwrfgKLgx4+WQDXmFD9qBXWA="
+  }
+]

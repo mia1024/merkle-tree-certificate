@@ -59,7 +59,7 @@ class TestAssertion(unittest.TestCase):
             )
 
     def test_create_assertion(self):
-        a = create_assertion("some subject info", ipv4_addrs=("192.168.10.1", "192.168.2.1"),
+        a = create_assertion(b"some subject info", ipv4_addrs=("192.168.10.1", "192.168.2.1"),
                              dns_names=("sub.example.com", "example.com",), dns_wild_cards=("example.com",),
                              ipv6_addrs=("2606:4700:4700::64", "::1"))
         b = Assertion(

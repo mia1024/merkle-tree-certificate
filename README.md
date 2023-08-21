@@ -12,5 +12,5 @@ python3 -m unittest
 To typecheck, run
 
 ```
- mypy --check-untyped-defs .             
+mypy --check-untyped-defs .             
 ```

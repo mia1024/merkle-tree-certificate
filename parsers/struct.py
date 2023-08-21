@@ -3,6 +3,7 @@ import typing
 from typing import NamedTuple, Self
 from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset, parse_failure
 import textwrap
+import io
 
 
 class Field(NamedTuple):
@@ -73,10 +74,12 @@ class Struct(Parser, metaclass=StructMeta):
         return parse_success(cls(*parsed), offset)
 
     def to_bytes(self) -> bytes:
-        b = b""
+
+        # using BytesIO because repeated byte concatenation is slow
+        bio = io.BytesIO()
         for v in self.value:
-            b += v.to_bytes()
-        return b
+            bio.write(v.to_bytes())
+        return bio.getvalue()
 
     def print(self) -> str:
         header = "-" * 20 + f"Struct {self.__class__.__name__} ({len(self)})" + "-" * 20 + "\n"
@@ -98,7 +101,7 @@ class Struct(Parser, metaclass=StructMeta):
         for i, f in enumerate(self._fields):
             if f.name == key:
                 self.value[i] = value
-        super().__setattr__(key,value)
+        super().__setattr__(key, value)
 
     def validate(self) -> None:
         if len(self.value) != len(self._fields):

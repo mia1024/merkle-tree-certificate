@@ -1,13 +1,13 @@
 import enum
 import re
 import ipaddress
-from typing import Iterable
 from .vector import Vector, OpaqueVector
 from .ip import IPv6Address, IPv4Address
 from .enums import Enum
 from .variant import Variant
-from .structs import Struct
+from .struct import Struct
 from .utils import sort_dns_names
+from typing import TypeVar, Optional
 
 
 class IPv4AddressList(Vector):
@@ -108,28 +108,38 @@ class Assertion(Struct):
     claims: ClaimList
 
 
-def create_assertion(subject_info: str, *, ipv4_addrs: Iterable[str] | None = None,
-                     ipv6_addrs: Iterable[str] | None = None, dns_names: Iterable[str] | None = None,
-                     dns_wild_cards: Iterable[str] | None = None) -> Assertion:
-    subject_info_bytes = SubjectInfo(subject_info.encode())
+class Assertions(Vector):
+    data_type = Assertion
+    min_length = 0
+    max_length = 2 ** 64 - 1
+
+
+T = TypeVar("T")
+ListOrTuple = list[T] | tuple[T, ...]
+
+
+def create_assertion(subject_info: bytes, *, ipv4_addrs: Optional[ListOrTuple[str]] = None,
+                     ipv6_addrs: Optional[ListOrTuple[str]] = None, dns_names: Optional[ListOrTuple[str]] = None,
+                     dns_wild_cards: Optional[ListOrTuple[str]] = None) -> Assertion:
+    subject_info_bytes = SubjectInfo(subject_info)
     claims: list[Claim] = []
 
-    if dns_names is not None:
+    if dns_names:
         claims.append(Claim((ClaimType.dns, DNSNameList(*
                                                         map(DNSName,
                                                             map(lambda s: s.encode(), sort_dns_names(dns_names)))))))
 
-    if dns_wild_cards is not None:
+    if dns_wild_cards:
         claims.append(Claim(
             (ClaimType.dns_wildcard,
              DNSNameList(*map(DNSName, map(lambda s: s.encode(), sort_dns_names(dns_wild_cards)))))))
 
-    if ipv4_addrs is not None:
+    if ipv4_addrs:
         claims.append(
             Claim((ClaimType.ipv4, IPv4AddressList(
                 *map(IPv4Address, sorted(ipv4_addrs, key=lambda a: ipaddress.IPv4Address(a)))))))
 
-    if ipv6_addrs is not None:
+    if ipv6_addrs:
         claims.append(
             Claim((ClaimType.ipv6, IPv6AddressList(
                 *map(IPv6Address, sorted(ipv6_addrs, key=lambda a: ipaddress.IPv6Address(a)))))))
@@ -138,4 +148,4 @@ def create_assertion(subject_info: str, *, ipv4_addrs: Iterable[str] | None = No
 
 
 __all__ = ["IPv4AddressList", "IPv6AddressList", "SubjectType", "ClaimType",
-           "DNSName", "DNSNameList", "SubjectInfo", "Claim", "ClaimList", "Assertion", "create_assertion"]
+           "DNSName", "DNSNameList", "SubjectInfo", "Claim", "ClaimList", "Assertion", "Assertions", "create_assertion"]
