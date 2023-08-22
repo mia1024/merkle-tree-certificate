@@ -105,7 +105,7 @@ class Parser:
         raise NotImplementedError("Do not use this class directly")
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         raise NotImplementedError("Do not use this class directly")
 
     def __repr__(self) -> str:

@@ -4,14 +4,10 @@ from .utils import read_public_key
 
 def verify_cli(cert_path, window_path, pub_key_path, issuer_id):
     with open(cert_path, "rb") as f:
-        cert = BikeshedCertificate.parse(f.read())
-        if not cert.success:
-            raise ValueError("Cannot parse certificate")
+        cert = BikeshedCertificate.parse(f)
 
     with open(window_path, "rb") as f:
-        window = SignedValidityWindow.parse(f.read())
-        if not window.success:
-            raise ValueError("Cannot parse validity window")
+        window = SignedValidityWindow.parse(f)
 
     pub_key = read_public_key(pub_key_path)
 

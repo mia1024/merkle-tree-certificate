@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 import json
 from parsers import create_assertion, Assertion
@@ -16,7 +17,7 @@ class AssertionInput:
     ipv6Addr: Optional[list[str]]
 
 
-def read_assertions_input(path: str)->list[Assertion]:
+def read_assertions_input(path: os.PathLike) -> list[Assertion]:
     f = open(path, "r")
     content = f.read()
     f.close()

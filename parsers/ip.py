@@ -13,7 +13,7 @@ class IPv4Address(Parser):
         return self.value.packed
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         return cls(stream.read(4))
 
     def print(self) -> str:
@@ -28,7 +28,7 @@ class IPv6Address(Parser):
         return self.value.packed
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         return cls(stream.read(16))
 
     def print(self) -> str:

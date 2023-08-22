@@ -18,7 +18,7 @@ class Integer(Parser):
         return int_to_bytes(self.value, self.size_in_bytes)
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         return cls(bytes_to_int(stream.read(cls.size_in_bytes)))
 
     def print(self) -> str:

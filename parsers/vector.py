@@ -44,7 +44,7 @@ class Vector(Parser, metaclass=VectorMeta):
         return int_to_bytes(len(b), self.marker_size) + b
 
     @classmethod
-    def parse(cls, data: io.BytesIO) -> Self:
+    def parse(cls, data: io.BufferedIOBase) -> Self:
         size = bytes_to_int(data.read(cls.marker_size))
         if not cls.min_length <= size <= cls.max_length:
             raise cls.ParsingError(data.tell() - cls.marker_size, data.tell(),
@@ -92,7 +92,7 @@ class OpaqueVector(Parser, metaclass=VectorMeta):
         return int_to_bytes(len(self.value), self.marker_size) + self.value
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         size = bytes_to_int(stream.read(cls.marker_size))
         if not cls.min_length <= size <= cls.max_length:
             raise cls.ParsingError(stream.tell() - cls.marker_size, stream.tell(),
@@ -120,7 +120,7 @@ class Array(Parser):
         return self.value
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         return cls(stream.read(cls.length))
 
     def validate(self) -> None:

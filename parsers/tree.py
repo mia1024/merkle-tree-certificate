@@ -49,7 +49,7 @@ class HashHead(Parser):
         return b
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         distinguisher = Distinguisher.parse(stream)
         issuer_id = IssuerID.parse(stream)
         batch_number = UInt32.parse(stream)

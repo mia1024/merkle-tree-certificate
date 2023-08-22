@@ -8,14 +8,14 @@ ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__))).parent
 BATCHES_ROOT = ROOT_DIR / "www" / "batches"
 
 
-def get_absolute_path(path: str):
+def get_absolute_path(path: os.PathLike):
     expanded = os.path.expanduser(path)
     if os.path.isabs(expanded):
         return expanded
     return os.path.join(os.getcwd(), path)
 
 
-def read_private_key(path: str) -> ed25519.Ed25519PrivateKey:
+def read_private_key(path: os.PathLike) -> ed25519.Ed25519PrivateKey:
     f = open(path, "rb")
     data = f.read()
     f.close()
@@ -25,7 +25,7 @@ def read_private_key(path: str) -> ed25519.Ed25519PrivateKey:
     return key
 
 
-def read_public_key(path: str) -> ed25519.Ed25519PublicKey:
+def read_public_key(path: os.PathLike) -> ed25519.Ed25519PublicKey:
     f = open(path, "rb")
     data = f.read()
     f.close()
@@ -82,23 +82,16 @@ def get_latest_batch_number():
 
 def read_validity_window(batch_number: int) -> SignedValidityWindow:
     f = open(BATCHES_ROOT / str(batch_number) / "signed-validity-window", "rb")
-    data = f.read()
-    f.close()
-    parsed = SignedValidityWindow.parse(data)
+    parsed = SignedValidityWindow.parse(f)
     if not parsed.success:
+        f.close()
         raise ValueError("Invalid content in validity window")
     return parsed.result
 
 
 def read_assertions(batch_number: int) -> Assertions:
-    f = open(BATCHES_ROOT / str(batch_number) / "assertions", "rb")
-    data = f.read()
-    f.close()
-    parsed = Assertions.parse(data)
-    print(parsed)
-    if not parsed.success:
-        raise ValueError("Invalid content in assertions")
-    return parsed.result
+    with open(BATCHES_ROOT / str(batch_number) / "assertions", "rb") as f:
+        return Assertions.parse(f)
 
 
 def generate_test_key_pairs(path: str):

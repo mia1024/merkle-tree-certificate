@@ -30,7 +30,7 @@ class TreeHeads(Parser):
                 VALIDITY_WINDOW_SIZE - len(self.value)) * SHA256_HASH_SIZE
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         l: list[SHA256Hash] = []
         for i in range(VALIDITY_WINDOW_SIZE):
             h = SHA256Hash.parse(stream)
@@ -58,7 +58,7 @@ class ValidityWindowLabel(Parser):
         return self.value
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         return cls(stream.read(32))
 
     def validate(self) -> None:
@@ -138,7 +138,7 @@ class Proof(Struct):
     proof_data: ProofData | MerkleTreeProofSHA256
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         offset_start = stream.tell()
         proof = super().parse(stream)
         offset_end = stream.tell()

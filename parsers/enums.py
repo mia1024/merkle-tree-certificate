@@ -26,7 +26,7 @@ class Enum(Parser, metaclass=EnumMeta):
         return int_to_bytes(self.value, self.size_in_bytes)
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         n = bytes_to_int(stream.read(cls.size_in_bytes))
         try:
             obj = cls(n)

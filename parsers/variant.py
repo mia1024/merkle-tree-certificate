@@ -16,7 +16,7 @@ class Variant(Parser):
         return self.value[0].to_bytes() + self.value[1].to_bytes()
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         vary_on = cls.vary_on_type.parse(stream)
         content = cls.mapping[vary_on].parse(stream)
 

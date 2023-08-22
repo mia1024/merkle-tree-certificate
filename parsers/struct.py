@@ -51,7 +51,7 @@ class Struct(Parser, metaclass=StructMeta):
         self.value = list(value)
 
     @classmethod
-    def parse(cls, stream: io.BytesIO) -> Self:
+    def parse(cls, stream: io.BufferedIOBase) -> Self:
         offset = 0
         parsed = []
         for f in cls._fields:
