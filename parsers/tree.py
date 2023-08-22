@@ -1,4 +1,6 @@
 import enum, hashlib
+import io
+
 from .enums import Enum
 from .struct import Struct
 from .vector import OpaqueVector, Array
@@ -47,24 +49,12 @@ class HashHead(Parser):
         return b
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
-        offset = 0
+    def parse(cls, stream: io.BytesIO) -> Self:
+        distinguisher = Distinguisher.parse(stream)
+        issuer_id = IssuerID.parse(stream)
+        batch_number = UInt32.parse(stream)
 
-        distinguisher = Distinguisher.parse(data)
-        if not distinguisher.success:
-            return distinguisher
-        offset += distinguisher.length
-
-        issuer_id = IssuerID.parse(data[offset:])
-        if not issuer_id.success:
-            return propagate_failure_with_offset(issuer_id, offset)
-        offset += issuer_id.length
-
-        batch_number = UInt32.parse(data[offset:])
-        if not batch_number.success:
-            return propagate_failure_with_offset(batch_number, offset)
-
-        return parse_success(cls((distinguisher.result, issuer_id.result, batch_number.result)), 64)
+        return cls((distinguisher, issuer_id, batch_number))
 
     def print(self) -> str:
         s = f"----------{self.__class__.__name__}(64)-----------"

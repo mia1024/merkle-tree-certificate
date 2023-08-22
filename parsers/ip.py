@@ -1,3 +1,4 @@
+import io
 import ipaddress
 
 from .base import Parser, parse_success, ParseResult
@@ -12,8 +13,8 @@ class IPv4Address(Parser):
         return self.value.packed
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
-        return parse_success(cls(data[:4]), 4)
+    def parse(cls, stream: io.BytesIO) -> Self:
+        return cls(stream.read(4))
 
     def print(self) -> str:
         return f"4 {self.__class__.__name__} {str(self.value)}"
@@ -27,8 +28,8 @@ class IPv6Address(Parser):
         return self.value.packed
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
-        return parse_success(cls(data[:16]), 16)
+    def parse(cls, stream: io.BytesIO) -> Self:
+        return cls(stream.read(16))
 
     def print(self) -> str:
         return f"16 {self.__class__.__name__} {str(self.value)}"

@@ -17,10 +17,9 @@ class TestCertificate(unittest.TestCase):
         proofs = create_merkle_tree_proofs([assertion] * 10, issuer_id, batch_number)
 
         for proof in proofs:
-            proof_new = Proof.parse(proof.to_bytes())
-            self.assertTrue(proof_new.success)
-            self.assertEqual(proof, proof_new.result) # type: ignore
-            self.assertEqual(proof.to_bytes(), proof_new.result.to_bytes()) # type: ignore
+            proof_new = Proof.parse(io.BytesIO(proof.to_bytes()))
+            self.assertEqual(proof, proof_new)
+            self.assertEqual(proof.to_bytes(), proof_new.to_bytes())
 
             certificate = BikeshedCertificate(assertion, proof)
             verify_certificate(certificate, signed_validity_window, issuer_id, TEST_PUB_KEY)

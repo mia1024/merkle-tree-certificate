@@ -43,28 +43,23 @@ class Vector(Parser, metaclass=VectorMeta):
 
         return int_to_bytes(len(b), self.marker_size) + b
 
-
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
-        size = bytes_to_int(data[:cls.marker_size])
+    def parse(cls, data: io.BytesIO) -> Self:
+        size = bytes_to_int(data.read(cls.marker_size))
         if not cls.min_length <= size <= cls.max_length:
-            return parse_failure(0, cls.marker_size, f"Invalid vector size {size}")
+            raise cls.ParsingError(data.tell() - cls.marker_size, data.tell(),
+                                   f"Invalid vector size {size} outside {cls.min_length}-{cls.max_length}")
 
-        offset = cls.marker_size
         l = []
-        while offset - cls.marker_size < size:
-            result = cls.data_type.parse(data[offset:])
-            if result.success:
-                l.append(result.result)
-                offset += result.length
-            else:
-                # propagate parse failure with correct offset
-                return propagate_failure_with_offset(result, offset)
+        offset_start = data.tell()
+        while data.tell() - offset_start < size:
+            result = cls.data_type.parse(data)
+            l.append(result)
 
-        if offset - cls.marker_size > size:
-            return parse_failure(size, offset, "Extra data read")
+        if data.tell() - offset_start > size:
+            raise cls.ParsingError(offset_start + size, data.tell(), "extra data read while processing vector")
 
-        return parse_success(cls(*l), size + cls.marker_size)
+        return cls(*l)
 
     def print(self) -> str:
         header = "-" * 20 + f"Vector {self.__class__.__name__} ({len(self)})" + "-" * 20 + "\n"
@@ -97,12 +92,13 @@ class OpaqueVector(Parser, metaclass=VectorMeta):
         return int_to_bytes(len(self.value), self.marker_size) + self.value
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
-        size = bytes_to_int(data[:cls.marker_size])
+    def parse(cls, stream: io.BytesIO) -> Self:
+        size = bytes_to_int(stream.read(cls.marker_size))
         if not cls.min_length <= size <= cls.max_length:
-            return parse_failure(0, cls.marker_size, f"Invalid vector size {size}")
+            raise cls.ParsingError(stream.tell() - cls.marker_size, stream.tell(),
+                                   f"Invalid vector size {size} outside {cls.min_length}-{cls.max_length}")
 
-        return parse_success(cls(data[cls.marker_size:size + cls.marker_size]), size + cls.marker_size)
+        return cls(stream.read(size))
 
     def validate(self) -> None:
         if not self.min_length <= len(self.value) <= self.max_length:
@@ -124,8 +120,8 @@ class Array(Parser):
         return self.value
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
-        return parse_success(cls(data[:cls.length]), cls.length)
+    def parse(cls, stream: io.BytesIO) -> Self:
+        return cls(stream.read(cls.length))
 
     def validate(self) -> None:
         if len(self.value) != self.length:

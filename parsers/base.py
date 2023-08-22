@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal, Any, TypeVar, Generic, Self
 from math import ceil
+import io
 
 
 def bytes_needed(n: int) -> int:
@@ -64,7 +65,13 @@ def propagate_failure_with_offset(failure: ParseResultFail, offset: int) -> Pars
     return parse_failure(offset + failure.offset_begin, offset + failure.offset_end, failure.reason)
 
 
-class ParserValidationError(Exception): pass
+class ParserError(Exception): pass
+
+
+class ParserValidationError(ParserError): pass
+
+
+class ParserParsingError(ParserError): pass
 
 
 class Parser:
@@ -73,6 +80,15 @@ class Parser:
     """
 
     class ValidationError(ParserValidationError): pass
+
+    class ParsingError(ParserParsingError):
+        def __init__(self, start: int, end: int, *args):
+            super().__init__(*args)
+            self.start = start
+            self.end = end
+
+        def __str__(self) -> str:
+            return f"Error {self.start}:{self.end} " + super().__str__()
 
     def __new__(cls, *args, **kwargs):
         """perform validation right after object initialization so subclasses don't have to explicitly call it"""
@@ -89,7 +105,7 @@ class Parser:
         raise NotImplementedError("Do not use this class directly")
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
+    def parse(cls, stream: io.BytesIO) -> Self:
         raise NotImplementedError("Do not use this class directly")
 
     def __repr__(self) -> str:

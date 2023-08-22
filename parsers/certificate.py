@@ -1,8 +1,10 @@
 import enum, math
+import io
+
 from .enums import Enum
 from .struct import Struct
 from .vector import Vector, OpaqueVector
-from .base import parse_success, ParseResult, Parser, propagate_failure_with_offset, int_to_bytes
+from .base import parse_success, ParseResult, Parser, propagate_failure_with_offset, int_to_bytes, ParserParsingError
 from .numerical import UInt32, UInt64, UInt8
 from typing import Self
 from .tree import IssuerID, SHA256Hash
@@ -28,14 +30,12 @@ class TreeHeads(Parser):
                 VALIDITY_WINDOW_SIZE - len(self.value)) * SHA256_HASH_SIZE
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
+    def parse(cls, stream: io.BytesIO) -> Self:
         l: list[SHA256Hash] = []
         for i in range(VALIDITY_WINDOW_SIZE):
-            h = SHA256Hash.parse(data[i * SHA256_HASH_SIZE:(i + 1) * SHA256_HASH_SIZE])
-            if not h.success:
-                return propagate_failure_with_offset(h, i * SHA256_HASH_SIZE)
-            l.append(h.result)
-        return parse_success(cls(l), VALIDITY_WINDOW_SIZE * SHA256_HASH_SIZE)
+            h = SHA256Hash.parse(stream)
+            l.append(h)
+        return cls(l)
 
     def validate(self) -> None:
         if len(self.value) > VALIDITY_WINDOW_SIZE:
@@ -58,8 +58,8 @@ class ValidityWindowLabel(Parser):
         return self.value
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
-        return parse_success(cls(data[:32]), 32)
+    def parse(cls, stream: io.BytesIO) -> Self:
+        return cls(stream.read(32))
 
     def validate(self) -> None:
         if self.value != b"Merkle Tree Crts ValidityWindow\0":
@@ -138,22 +138,19 @@ class Proof(Struct):
     proof_data: ProofData | MerkleTreeProofSHA256
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
-        result = super().parse(data)
-        if not result.success:
-            return result
-        d = result.result
-        if d.trust_anchor.proof_type == ProofType.merkle_tree_sha256:
-            anchor = MerkleTreeTrustAnchor.parse(d.trust_anchor.trust_anchor_data.value)
-            if not anchor.success:
-                return propagate_failure_with_offset(anchor, 2)
-            d.trust_anchor.trust_anchor_data = anchor.result
-            proof = MerkleTreeProofSHA256.parse(d.proof_data.value)
-            if not proof.success:
-                return propagate_failure_with_offset(proof, anchor.length)
+    def parse(cls, stream: io.BytesIO) -> Self:
+        offset_start = stream.tell()
+        proof = super().parse(stream)
+        offset_end = stream.tell()
+        if proof.trust_anchor.proof_type == ProofType.merkle_tree_sha256:
+            try:
+                anchor = MerkleTreeTrustAnchor.parse(io.BytesIO(proof.trust_anchor.trust_anchor_data.value))
+                proof.trust_anchor.trust_anchor_data = anchor
+                proof.proof_data = MerkleTreeProofSHA256.parse(io.BytesIO(proof.proof_data.value))
+            except ParserParsingError:
+                raise cls.ParsingError(offset_start, offset_end, "data cannot be interpreted as a MerkleTreeProof")
 
-            d.proof_data = proof.result
-        return parse_success(d, result.length)
+        return proof
 
 
 class BikeshedCertificate(Struct):

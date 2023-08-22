@@ -1,6 +1,9 @@
 import enum
+import io
+
 from .base import Parser, int_to_bytes, bytes_to_int, parse_failure, parse_success, ParseResult
 from typing import Self
+
 
 class EnumMeta(type):
     def __new__(cls, name, bases, attrs, **kwargs):
@@ -23,14 +26,14 @@ class Enum(Parser, metaclass=EnumMeta):
         return int_to_bytes(self.value, self.size_in_bytes)
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
-        n = bytes_to_int(data[:cls.size_in_bytes])
+    def parse(cls, stream: io.BytesIO) -> Self:
+        n = bytes_to_int(stream.read(cls.size_in_bytes))
         try:
             obj = cls(n)
         except ValueError:
-            return parse_failure(0, cls.size_in_bytes, f"Invalid value {n}")
+            raise cls.ParsingError(stream.tell() - cls.size_in_bytes, stream.tell(), f"Invalid value {n}")
 
-        return parse_success(obj, cls.size_in_bytes)
+        return obj
 
     def print(self) -> str:
         return f"{self.size_in_bytes} {self.__class__.__name__} {self.value.name}({self.value})"

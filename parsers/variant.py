@@ -1,6 +1,9 @@
+import io
+
 from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset
 import textwrap
 from typing import Self
+
 
 class Variant(Parser):
     vary_on_type: type[Parser]
@@ -13,18 +16,11 @@ class Variant(Parser):
         return self.value[0].to_bytes() + self.value[1].to_bytes()
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
-        vary_on = cls.vary_on_type.parse(data)
-        if not vary_on.success:
-            # propagating with an offset of 0
-            return vary_on
+    def parse(cls, stream: io.BytesIO) -> Self:
+        vary_on = cls.vary_on_type.parse(stream)
+        content = cls.mapping[vary_on].parse(stream)
 
-        content = cls.mapping[vary_on.result].parse(data[vary_on.length:])
-        if not content.success:
-            return propagate_failure_with_offset(content, vary_on.length)
-
-        return parse_success(cls((vary_on.result, content.result)),
-                             vary_on.length + content.length)
+        return cls((vary_on, content))
 
     def print(self) -> str:
         return self.value[0].print() + "\n" + textwrap.indent(self.value[1].print(), "\t")

@@ -1,7 +1,7 @@
 import types
 import typing
 from typing import NamedTuple, Self
-from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset, parse_failure
+from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset, parse_failure, ParserError
 import textwrap
 import io
 
@@ -51,30 +51,29 @@ class Struct(Parser, metaclass=StructMeta):
         self.value = list(value)
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult[Self]:
+    def parse(cls, stream: io.BytesIO) -> Self:
         offset = 0
         parsed = []
         for f in cls._fields:
             if isinstance(f.data_type, types.UnionType):
                 for d_type in typing.get_args(f.data_type):
-                    res = d_type.parse(data[offset:])
-                    if res.success:
-                        offset += res.length
-                        parsed.append(res.result)
+                    initial = stream.tell()
+                    try:
+                        res = d_type.parse(stream)
+                    except ParserError:
+                        # revert attempt
+                        stream.seek(initial)
+                    else:
+                        parsed.append(res)
                         break
                 else:
                     return parse_failure(offset, offset, "Cannot decode data as any datatype of the union")
             else:
-                res = f.data_type.parse(data[offset:])
-                if not res.success:
-                    return propagate_failure_with_offset(res, offset)
-                offset += res.length
-                parsed.append(res.result)
+                parsed.append(f.data_type.parse(stream))
 
-        return parse_success(cls(*parsed), offset)
+        return cls(*parsed)
 
     def to_bytes(self) -> bytes:
-
         # using BytesIO because repeated byte concatenation is slow
         bio = io.BytesIO()
         for v in self.value:

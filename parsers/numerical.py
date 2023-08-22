@@ -1,10 +1,12 @@
+import io
+
 from .base import (Parser,
                    int_to_bytes,
                    parse_success,
                    ParseResult,
                    bytes_to_int
                    )
-
+from typing import Self
 
 class Integer(Parser):
     size_in_bytes: int
@@ -16,8 +18,8 @@ class Integer(Parser):
         return int_to_bytes(self.value, self.size_in_bytes)
 
     @classmethod
-    def parse(cls, data: bytes) -> ParseResult:
-        return parse_success(cls(bytes_to_int(data[:cls.size_in_bytes])), cls.size_in_bytes)
+    def parse(cls, stream: io.BytesIO) -> Self:
+        return cls(bytes_to_int(stream.read(cls.size_in_bytes)))
 
     def print(self) -> str:
         return f"{self.size_in_bytes} {self.__class__.__name__} {self.value}"
