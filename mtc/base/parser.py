@@ -105,6 +105,10 @@ class Parser:
         """Subclasses should overwrite this function and raise a ValidationError from the class"""
         pass
 
+    @staticmethod
+    def disable_validation():
+        Parser.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)
+
 
 __all__ = ["bytes_needed", "bytes_to_int", "int_to_bytes", "printable_bytes_truncate",
            "Parser", "ParserError", "ParserParsingError", "ParserValidationError"]

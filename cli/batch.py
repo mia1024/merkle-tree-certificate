@@ -3,7 +3,7 @@ from typing import Optional
 
 from mtc import create_bikeshed_certificate, create_merkle_tree_proof, BikeshedCertificate
 from .assertion_input import read_assertions_input
-from .utils import save_batch, get_latest_batch_number, read_private_key, read_assertion, ROOT_DIR
+from .utils import save_batch, get_latest_batch_number, read_private_key, read_certificate, ROOT_DIR
 
 
 def generate_batch(assertions_input_path: os.PathLike, issuer_id: str, private_key_path: os.PathLike,
@@ -17,15 +17,10 @@ def generate_batch(assertions_input_path: os.PathLike, issuer_id: str, private_k
     save_batch(assertions, issuer_id.encode(), batch_number, private_key)
 
 
-def generate_certificate(batch_number: int, index: int, issuer_id: str, dest: str) -> BikeshedCertificate:
-    assertion = read_assertion(batch_number, index)
-    proof = create_merkle_tree_proof(assertion.value, issuer_id.encode(), batch_number, index)
-    cert = create_bikeshed_certificate(assertion, proof)
-
-    with open(dest, "wb") as f:
-        f.write(cert.to_bytes())
-
-    return cert
+def load_certificate(batch_number: int, index: int, path_to_save:os.PathLike) -> None:
+    with open(path_to_save,"wb") as f:
+        f.write(read_certificate(batch_number, index).to_bytes())
+    f.close()
 
 
 def stress_test_batch(private_key_path: os.PathLike):

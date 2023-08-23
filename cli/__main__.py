@@ -1,4 +1,8 @@
 from .cli import run
-import cProfile
 
-cProfile.runctx("run()", globals(), locals(), "profile2.pstat")
+# comment out the two lines below to run profiling
+#
+# import cProfile
+# cProfile.runctx("run()", globals(), locals(), "profile3.pstat")
+
+run()

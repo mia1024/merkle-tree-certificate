@@ -49,7 +49,8 @@ class Struct(Parser, metaclass=StructMeta):
     _fields: list[Field] = []
 
     def __init__(self, /, *value: Parser) -> None:
-        self.value = list(value)
+        super().__setattr__("_bytes_cache", None)
+        super().__setattr__("value", list(value))
 
     @classmethod
     def parse(cls, stream: io.BufferedIOBase) -> Self:
@@ -77,16 +78,19 @@ class Struct(Parser, metaclass=StructMeta):
     def skip(cls, stream: io.BufferedIOBase) -> None:
         for f in cls._fields:
             if isinstance(f.data_type, types.UnionType):
-                raise NotImplementedError("Skipping unions must be implemented in subclass")
+                raise NotImplementedError(f"Skipping unions must be implemented in subclass (missing in {cls.__name__})")
             else:
                 f.data_type.skip(stream)
 
     def to_bytes(self) -> bytes:
-        # using BytesIO because repeated byte concatenation is slow
-        bio = io.BytesIO()
-        for v in self.value:
-            bio.write(v.to_bytes())
-        return bio.getvalue()
+        if self._bytes_cache is None:
+            # using BytesIO because repeated byte concatenation is very slow
+            bio = io.BytesIO()
+            for v in self.value:
+                bio.write(v.to_bytes())
+            super().__setattr__("_bytes_cache", bio.getvalue())
+
+        return self._bytes_cache  # type:ignore[return-value]
 
     def print(self) -> str:
         header = "-" * 20 + f"Struct {self.__class__.__name__} ({len(self)})" + "-" * 20 + "\n"
@@ -105,6 +109,9 @@ class Struct(Parser, metaclass=StructMeta):
             raise AttributeError
 
     def __setattr__(self, key, value):
+        if self._bytes_cache is not None:
+            raise AttributeError("Cannot set attrs after to_bytes() is called")
+
         for i, f in enumerate(self._fields):
             if f.name == key:
                 self.value[i] = value

@@ -13,8 +13,10 @@ class TestCertificate(unittest.TestCase):
         issuer_id, batch_number = b"some issuer id", 0
 
         assertion = create_assertion(b"info", ipv4_addrs=("192.168.1.1",))
-        signed_validity_window = create_signed_validity_window([assertion] * 10, issuer_id, batch_number, TEST_PRIV_KEY)
-        proofs = create_merkle_tree_proofs([assertion] * 10, issuer_id, batch_number)
+
+        nodes = create_merkle_tree([assertion] * 10, issuer_id, batch_number)
+        signed_validity_window = create_signed_validity_window(nodes, issuer_id, batch_number, TEST_PRIV_KEY)
+        proofs = create_merkle_tree_proofs(nodes, issuer_id, batch_number, 10)
 
         for proof in proofs:
             proof_new = Proof.parse(io.BytesIO(proof.to_bytes()))

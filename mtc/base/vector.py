@@ -17,7 +17,7 @@ class VectorMeta(type):
         if "marker_size" in attrs:
             raise AttributeError("Vector subclasses should not define marker_size")
         marker_size = bytes_needed(attrs["max_length"])
-        return super().__new__(cls, name, bases, {"marker_size": marker_size, **attrs}, **kwargs)
+        return type.__new__(cls, name, bases, {"marker_size": marker_size, **attrs}, **kwargs)
 
 
 class Vector(Parser, metaclass=VectorMeta):
@@ -29,16 +29,19 @@ class Vector(Parser, metaclass=VectorMeta):
 
     def __init__(self, /, *value: Parser) -> None:
         self.value = value
+        self._bytes_cache: bytes | None = None
 
     def to_bytes(self) -> bytes:
-        # using BytesIO because repeated byte concatenation is slow
-        bio = io.BytesIO()
-        for item in self.value:
-            bio.write(item.to_bytes())
+        if self._bytes_cache is None:
+            # using BytesIO because repeated byte concatenation is slow
+            bio = io.BytesIO()
+            for item in self.value:
+                bio.write(item.to_bytes())
 
-        b = bio.getvalue()
+            b = bio.getvalue()
+            self._bytes_cache = int_to_bytes(len(b), self.marker_size) + b
 
-        return int_to_bytes(len(b), self.marker_size) + b
+        return self._bytes_cache
 
     @classmethod
     def parse(cls, data: io.BufferedIOBase) -> Self:

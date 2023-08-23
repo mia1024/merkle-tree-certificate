@@ -5,11 +5,12 @@ from typing import Optional, cast
 from typing import Self
 
 from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.exceptions import InvalidSignature
 
 from .assertion import Assertion
 from .base import Enum, Vector, OpaqueVector, Struct, Parser, int_to_bytes, ParserParsingError, UInt32, UInt64, UInt8
 from .tree import create_merkle_tree, sha256, HashAssertionInput, HashHead, Distinguisher, HashNodeInput, IssuerID, \
-    SHA256Hash
+    SHA256Hash, NodesList
 
 # CA parameter as defined in section 5.1 of the spec
 BATCH_DURATION = 3600  # 1 hour
@@ -129,6 +130,11 @@ class TrustAnchor(Struct):
     proof_type: ProofType
     trust_anchor_data: TrustAnchorData | MerkleTreeTrustAnchor
 
+    @classmethod
+    def skip(cls, stream: io.BufferedIOBase) -> None:
+        ProofType.skip(stream)
+        TrustAnchorData.skip(stream)
+
 
 class Proof(Struct):
     trust_anchor: TrustAnchor
@@ -149,22 +155,26 @@ class Proof(Struct):
 
         return proof
 
+    @classmethod
+    def skip(cls, stream: io.BufferedIOBase) -> None:
+        TrustAnchor.skip(stream)
+        ProofData.skip(stream)
+
 
 class BikeshedCertificate(Struct):
     assertion: Assertion
     proof: Proof
 
 
-def create_merkle_tree_proofs(assertions: list[Assertion], issuer_id: bytes, batch_number: int) -> list[Proof]:
-    nodes = create_merkle_tree(assertions, issuer_id, batch_number)
-    n = len(assertions)
+def create_merkle_tree_proofs(nodes: NodesList, issuer_id: bytes, batch_number: int,
+                              number_of_assertions_in_batch: int) -> list[Proof]:
     l = len(nodes)
 
     p_issuer_id = IssuerID(issuer_id)
     p_batch_number = UInt32(batch_number)
 
     proofs: list[Proof] = []
-    for i in range(n):
+    for i in range(number_of_assertions_in_batch):
         path = []
         for j in range(l - 1):
             path.append(nodes[j][(i >> j) ^ 1])
@@ -177,9 +187,8 @@ def create_merkle_tree_proofs(assertions: list[Assertion], issuer_id: bytes, bat
     return proofs
 
 
-def create_merkle_tree_proof(assertions: list[Assertion], issuer_id: bytes, batch_number: int, index: int) -> Proof:
+def create_merkle_tree_proof(nodes: NodesList, issuer_id: bytes, batch_number: int, index: int) -> Proof:
     # TODO: only hash the necessary assertions instead of everything
-    nodes = create_merkle_tree(assertions, issuer_id, batch_number)
     l = len(nodes)
 
     p_issuer_id = IssuerID(issuer_id)
@@ -196,7 +205,7 @@ def create_merkle_tree_proof(assertions: list[Assertion], issuer_id: bytes, batc
     return proof
 
 
-def create_signed_validity_window(assertions: list[Assertion], issuer_id: bytes, batch_number: int,
+def create_signed_validity_window(nodes: NodesList, issuer_id: bytes, batch_number: int,
                                   private_key: ed25519.Ed25519PrivateKey,
                                   previous_validity_window: Optional[SignedValidityWindow] = None):
     if previous_validity_window is None:
@@ -207,9 +216,16 @@ def create_signed_validity_window(assertions: list[Assertion], issuer_id: bytes,
         if batch_number - 1 != previous_validity_window.window.batch_number.value:
             raise ValueError(
                 f"Batch number must be continuous from previous validity window. Previous one is {previous_validity_window.window.batch_number}")
-        previous_hashes = previous_validity_window.window.tree_heads.value[:-1]
 
-    nodes = create_merkle_tree(assertions, issuer_id, batch_number)
+        previous_labeled_window = LabeledValidityWindow(ValidityWindowLabel(), IssuerID(issuer_id),
+                                                        previous_validity_window.window)
+
+        try:
+            private_key.public_key().verify(previous_validity_window.signature.value, previous_labeled_window.to_bytes())
+        except InvalidSignature:
+            raise ValueError("Cannot verify the signature of previous validity window")
+
+        previous_hashes = previous_validity_window.window.tree_heads.value[:-1]
 
     validity_window = ValidityWindow(UInt32(batch_number), TreeHeads(
         [nodes[-1][0]] + previous_hashes))

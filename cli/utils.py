@@ -4,7 +4,8 @@ from pathlib import Path
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-from mtc import create_signed_validity_window, Assertion, Assertions, SignedValidityWindow
+from mtc import create_signed_validity_window, Assertion, Assertions, SignedValidityWindow, create_merkle_tree, \
+    create_merkle_tree_proofs, create_bikeshed_certificate, BikeshedCertificate
 
 ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__))).parent
 BATCHES_ROOT = ROOT_DIR / "www" / "batches"
@@ -49,7 +50,9 @@ def save_batch(assertions: list[Assertion], issuer_id: bytes, batch_number: int,
 
     dest = BATCHES_ROOT / str(batch_number)
 
-    window = create_signed_validity_window(assertions, issuer_id, batch_number, private_key, validity_window)
+    nodes = create_merkle_tree(assertions, issuer_id, batch_number)
+    window = create_signed_validity_window(nodes, issuer_id, batch_number, private_key, validity_window)
+    proofs = create_merkle_tree_proofs(nodes, issuer_id, batch_number, len(assertions))
 
     os.makedirs(dest, exist_ok=True)
 
@@ -58,13 +61,13 @@ def save_batch(assertions: list[Assertion], issuer_id: bytes, batch_number: int,
     f.close()
 
     f = open(dest / "assertions", "wb")
-
-    #
-    # for a in assertions:
-    #     f.write(a.to_bytes())
-
     f.write(Assertions(*assertions).to_bytes())
+    f.close()
 
+    f = open(dest / "certificates", "wb")
+    for i in range(len(assertions)):
+        cert = create_bikeshed_certificate(assertions[i], proofs[i])
+        f.write(cert.to_bytes())
     f.close()
 
     try:
@@ -84,11 +87,8 @@ def get_latest_batch_number():
 
 def read_validity_window(batch_number: int) -> SignedValidityWindow:
     f = open(BATCHES_ROOT / str(batch_number) / "signed-validity-window", "rb")
-    parsed = SignedValidityWindow.parse(f)
-    if not parsed.success:
-        f.close()
-        raise ValueError("Invalid content in validity window")
-    return parsed.result
+    window = SignedValidityWindow.parse(f)
+    return window
 
 
 def read_assertion(batch_number: int, index: int) -> Assertion:
@@ -97,6 +97,13 @@ def read_assertion(batch_number: int, index: int) -> Assertion:
         for i in range(index):
             Assertion.skip(f)
         return Assertion.parse(f)
+
+
+def read_certificate(batch_number: int, index: int) -> BikeshedCertificate:
+    with open(BATCHES_ROOT / str(batch_number) / "certificates", "rb") as f:
+        for i in range(index):
+            BikeshedCertificate.skip(f)
+        return BikeshedCertificate.parse(f)
 
 
 def generate_test_key_pairs(path: str):
