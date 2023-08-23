@@ -1,7 +1,6 @@
-from dataclasses import dataclass
-from typing import Literal, Any, TypeVar, Generic, Self
-from math import ceil
 import io
+from math import ceil
+from typing import Any, Self
 
 
 def bytes_needed(n: int) -> int:
@@ -29,40 +28,6 @@ def printable_bytes_truncate(b: bytes, limit: int) -> str:
             s += chr(c)
 
     return s
-
-
-T = TypeVar("T", bound="Parser")
-
-
-@dataclass
-class ParseResultFail:
-    success: Literal[False]
-    offset_begin: int
-    offset_end: int
-    reason: str
-
-
-@dataclass
-class ParseResultSuccess(Generic[T]):
-    success: Literal[True]
-    result: T
-    # if success is True, this is the length of bytestream consumed
-    length: int
-
-
-ParseResult = ParseResultSuccess[T] | ParseResultFail
-
-
-def parse_failure(offset_begin: int, offset_end: int, reason: str) -> ParseResultFail:
-    return ParseResultFail(False, offset_begin, offset_end, reason)
-
-
-def parse_success(obj: "Parser", length: int) -> ParseResultSuccess:
-    return ParseResultSuccess(True, obj, length)
-
-
-def propagate_failure_with_offset(failure: ParseResultFail, offset: int) -> ParseResultFail:
-    return parse_failure(offset + failure.offset_begin, offset + failure.offset_end, failure.reason)
 
 
 class ParserError(Exception): pass
@@ -102,11 +67,18 @@ class Parser:
         raise NotImplementedError("Do not use this class directly")
 
     def to_bytes(self) -> bytes:
-        raise NotImplementedError("Do not use this class directly")
+        raise NotImplementedError("Implemented in subclass only")
 
     @classmethod
     def parse(cls, stream: io.BufferedIOBase) -> Self:
         raise NotImplementedError("Do not use this class directly")
+
+    @classmethod
+    def skip(cls, stream: io.BufferedIOBase) -> None:
+        """
+        skips the corresponding section in the stream while doing minimum processing possible
+        """
+        raise NotImplementedError("Implemented in subclass only")
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self.value}>"
@@ -134,5 +106,5 @@ class Parser:
         pass
 
 
-__all__ = ["bytes_needed", "bytes_to_int", "int_to_bytes", "printable_bytes_truncate", "propagate_failure_with_offset",
-           "Parser"]
+__all__ = ["bytes_needed", "bytes_to_int", "int_to_bytes", "printable_bytes_truncate",
+           "Parser", "ParserError", "ParserParsingError", "ParserValidationError"]

@@ -1,16 +1,13 @@
+import io
 import textwrap
 from typing import Self
-from .base import (Parser,
-                   int_to_bytes,
-                   bytes_to_int,
-                   printable_bytes_truncate,
-                   parse_failure,
-                   parse_success,
-                   ParseResult,
-                   propagate_failure_with_offset,
-                   bytes_needed
-                   )
-import io
+
+from .parser import (Parser,
+                     int_to_bytes,
+                     bytes_to_int,
+                     printable_bytes_truncate,
+                     bytes_needed
+                     )
 
 
 class VectorMeta(type):
@@ -61,6 +58,11 @@ class Vector(Parser, metaclass=VectorMeta):
 
         return cls(*l)
 
+    @classmethod
+    def skip(cls, stream: io.BufferedIOBase) -> None:
+        size = bytes_to_int(stream.read(cls.marker_size))
+        stream.seek(size, io.SEEK_CUR)
+
     def print(self) -> str:
         header = "-" * 20 + f"Vector {self.__class__.__name__} ({len(self)})" + "-" * 20 + "\n"
         footer = "-" * 18 + f"End vector {self.__class__.__name__}" + "-" * 18
@@ -109,6 +111,11 @@ class OpaqueVector(Parser, metaclass=VectorMeta):
         b = self.value
         return f"{len(b) + self.marker_size} {self.__class__.__name__} {printable_bytes_truncate(b, 80)}"
 
+    @classmethod
+    def skip(cls, stream: io.BufferedIOBase) -> None:
+        size = bytes_to_int(stream.read(cls.marker_size))
+        stream.seek(size, io.SEEK_CUR)
+
 
 class Array(Parser):
     length: int
@@ -122,6 +129,10 @@ class Array(Parser):
     @classmethod
     def parse(cls, stream: io.BufferedIOBase) -> Self:
         return cls(stream.read(cls.length))
+
+    @classmethod
+    def skip(cls, stream: io.BufferedIOBase) -> None:
+        stream.seek(cls.length, io.SEEK_CUR)
 
     def validate(self) -> None:
         if len(self.value) != self.length:

@@ -1,9 +1,9 @@
 import os
-
-from .utils import save_batch, get_latest_batch_number, read_private_key, read_assertions, ROOT_DIR
-from .assertion_input import read_assertions_input
 from typing import Optional
-from parsers import create_bikeshed_certificate, create_merkle_tree_proof, BikeshedCertificate
+
+from mtc import create_bikeshed_certificate, create_merkle_tree_proof, BikeshedCertificate
+from .assertion_input import read_assertions_input
+from .utils import save_batch, get_latest_batch_number, read_private_key, read_assertion, ROOT_DIR
 
 
 def generate_batch(assertions_input_path: os.PathLike, issuer_id: str, private_key_path: os.PathLike,
@@ -18,12 +18,9 @@ def generate_batch(assertions_input_path: os.PathLike, issuer_id: str, private_k
 
 
 def generate_certificate(batch_number: int, index: int, issuer_id: str, dest: str) -> BikeshedCertificate:
-    assertions = read_assertions(batch_number)
-    print(len(assertions.value))
-    if index >= len(assertions.value):
-        raise ValueError(f"Invalid assertion index {index} for batch {batch_number}")
-    proof = create_merkle_tree_proof(assertions.value, issuer_id.encode(), batch_number, index)
-    cert = create_bikeshed_certificate(assertions.value[index], proof)
+    assertion = read_assertion(batch_number, index)
+    proof = create_merkle_tree_proof(assertion.value, issuer_id.encode(), batch_number, index)
+    cert = create_bikeshed_certificate(assertion, proof)
 
     with open(dest, "wb") as f:
         f.write(cert.to_bytes())

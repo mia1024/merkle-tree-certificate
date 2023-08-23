@@ -1,14 +1,10 @@
-import enum, hashlib
+import enum
+import hashlib
 import io
-
-from .enums import Enum
-from .struct import Struct
-from .vector import OpaqueVector, Array
-from .base import parse_success, ParseResult, propagate_failure_with_offset
-from .assertion import Assertion
-from .numerical import UInt8, UInt32, UInt64
-from .base import Parser
 from typing import Sequence, Self
+
+from .assertion import Assertion
+from .base import Parser, Enum, Struct, OpaqueVector, Array, UInt8, UInt32, UInt64
 
 
 class DistinguisherEnum(enum.IntEnum):

@@ -1,9 +1,10 @@
+import io
+import textwrap
 import types
 import typing
 from typing import NamedTuple, Self
-from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset, parse_failure, ParserError
-import textwrap
-import io
+
+from .parser import Parser, ParserError
 
 
 class Field(NamedTuple):
@@ -52,7 +53,6 @@ class Struct(Parser, metaclass=StructMeta):
 
     @classmethod
     def parse(cls, stream: io.BufferedIOBase) -> Self:
-        offset = 0
         parsed = []
         for f in cls._fields:
             if isinstance(f.data_type, types.UnionType):
@@ -67,11 +67,19 @@ class Struct(Parser, metaclass=StructMeta):
                         parsed.append(res)
                         break
                 else:
-                    return parse_failure(offset, offset, "Cannot decode data as any datatype of the union")
+                    raise cls.ParsingError(initial, initial, "Cannot decode data as any datatype of the union")
             else:
                 parsed.append(f.data_type.parse(stream))
 
         return cls(*parsed)
+
+    @classmethod
+    def skip(cls, stream: io.BufferedIOBase) -> None:
+        for f in cls._fields:
+            if isinstance(f.data_type, types.UnionType):
+                raise NotImplementedError("Skipping unions must be implemented in subclass")
+            else:
+                f.data_type.skip(stream)
 
     def to_bytes(self) -> bytes:
         # using BytesIO because repeated byte concatenation is slow

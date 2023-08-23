@@ -1,6 +1,6 @@
-import ipaddress
+import io
 import unittest
-from parsers import *
+from mtc import *
 
 
 class TestAssertion(unittest.TestCase):
@@ -84,3 +84,17 @@ class TestAssertion(unittest.TestCase):
         self.assertEqual(a.to_bytes(), b.to_bytes())
         c = Assertion.parse(io.BytesIO(a.to_bytes()))
         self.assertEqual(c, b)
+
+    def test_skip_assertion(self):
+        a = create_assertion(b"some subject info", ipv4_addrs=("192.168.10.1", "192.168.2.1"),
+                             dns_names=("sub.example.com", "example.com",), dns_wild_cards=("example.com",),
+                             ipv6_addrs=("2606:4700:4700::64", "::1"))
+
+        bs = a.to_bytes() * 10
+        bio = io.BytesIO(bs)
+        a.skip(bio)
+        self.assertEqual(bio.tell(), len(a))
+
+    def test_sort_dns_names(self):
+        self.assertEqual(sort_dns_names(["SUB2.EXAMPLE.COM", "example.com", "sub1.example.com", "example.net"]),
+                         ['example.com', 'sub1.example.com', 'SUB2.EXAMPLE.COM', 'example.net'])

@@ -1,8 +1,10 @@
-from parsers import create_signed_validity_window, Assertion, Assertions, SignedValidityWindow
+import os
 from pathlib import Path
-import os, json
+
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
+
+from mtc import create_signed_validity_window, Assertion, Assertions, SignedValidityWindow
 
 ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__))).parent
 BATCHES_ROOT = ROOT_DIR / "www" / "batches"
@@ -89,9 +91,12 @@ def read_validity_window(batch_number: int) -> SignedValidityWindow:
     return parsed.result
 
 
-def read_assertions(batch_number: int) -> Assertions:
+def read_assertion(batch_number: int, index: int) -> Assertion:
     with open(BATCHES_ROOT / str(batch_number) / "assertions", "rb") as f:
-        return Assertions.parse(f)
+        f.seek(Assertions.marker_size)
+        for i in range(index):
+            Assertion.skip(f)
+        return Assertion.parse(f)
 
 
 def generate_test_key_pairs(path: str):

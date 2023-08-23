@@ -1,4 +1,4 @@
-from parsers.certificate import verify_certificate, BikeshedCertificate, SignedValidityWindow
+from mtc import verify_certificate, BikeshedCertificate, SignedValidityWindow
 from .utils import read_public_key
 
 

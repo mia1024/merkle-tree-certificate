@@ -1,8 +1,8 @@
 import io
 import ipaddress
-
-from .base import Parser, parse_success, ParseResult
 from typing import Self
+
+from .base import Parser
 
 
 class IPv4Address(Parser):

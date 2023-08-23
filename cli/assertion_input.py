@@ -1,9 +1,10 @@
+import base64
+import json
 import os
 from dataclasses import dataclass
-import json
-from parsers import create_assertion, Assertion
-import base64
 from typing import Optional
+
+from mtc import create_assertion, Assertion
 
 
 @dataclass

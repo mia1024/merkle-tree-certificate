@@ -1,18 +1,15 @@
-import enum, math
+import enum
 import io
-
-from .enums import Enum
-from .struct import Struct
-from .vector import Vector, OpaqueVector
-from .base import parse_success, ParseResult, Parser, propagate_failure_with_offset, int_to_bytes, ParserParsingError
-from .numerical import UInt32, UInt64, UInt8
-from typing import Self
-from .tree import IssuerID, SHA256Hash
-from .assertion import Assertion
-from .tree import create_merkle_tree, sha256, HashAssertionInput, HashHead, Distinguisher, HashNodeInput
+import math
 from typing import Optional, cast
+from typing import Self
 
 from cryptography.hazmat.primitives.asymmetric import ed25519
+
+from .assertion import Assertion
+from .base import Enum, Vector, OpaqueVector, Struct, Parser, int_to_bytes, ParserParsingError, UInt32, UInt64, UInt8
+from .tree import create_merkle_tree, sha256, HashAssertionInput, HashHead, Distinguisher, HashNodeInput, IssuerID, \
+    SHA256Hash
 
 # CA parameter as defined in section 5.1 of the spec
 BATCH_DURATION = 3600  # 1 hour

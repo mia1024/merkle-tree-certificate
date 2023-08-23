@@ -1,8 +1,8 @@
 import io
-
-from .base import Parser, parse_success, ParseResult, propagate_failure_with_offset
 import textwrap
 from typing import Self
+
+from .parser import Parser
 
 
 class Variant(Parser):

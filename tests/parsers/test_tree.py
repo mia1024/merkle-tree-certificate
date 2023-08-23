@@ -1,5 +1,6 @@
-import unittest, hashlib
-from parsers import *
+import unittest
+
+from mtc import *
 
 
 class TestMerkleTree(unittest.TestCase):
