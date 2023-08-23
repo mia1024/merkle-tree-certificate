@@ -1,8 +1,7 @@
 [
   {
     "dns": [
-      "cloudflare.com",
-      "www.cloudflare.com"
+      "cloudflare.com"
     ],
     "dnsWildcard": [
       "cloudflare.com"
@@ -11,6 +10,22 @@
       "1.1.1.1"
     ],
     "ipv6Addr": [],
+    "subjectType": "tls",
+    "subjectInfo": "AftY9Q6hlhN6i1iDUZ6VwrfgKLgx4+WQDXmFD9qBXWA="
+  },
+  {
+    "dns": [
+      "www.cloudflare.com"
+    ],
+    "dnsWildcard": [],
+    "ipv4Addr": [
+      "1.1.1.1",
+      "1.0.0.1"
+    ],
+    "ipv6Addr": [
+      "2606:4700:4700::1111",
+      "2606:4700:4700::1001"
+    ],
     "subjectType": "tls",
     "subjectInfo": "AftY9Q6hlhN6i1iDUZ6VwrfgKLgx4+WQDXmFD9qBXWA="
   }

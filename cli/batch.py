@@ -27,6 +27,6 @@ def stress_test_batch(private_key_path: os.PathLike):
     batch_number = get_latest_batch_number() + 1
     private_key = read_private_key(private_key_path)
 
-    assertions = read_assertions_input(ROOT_DIR / "input.example.json") * 1000000
+    assertions = read_assertions_input(ROOT_DIR / "input.example.json") * 500000
 
     save_batch(assertions, b"test issuer", batch_number, private_key)
