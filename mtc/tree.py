@@ -92,7 +92,14 @@ NodesList = list[list[SHA256Hash]]
 
 
 def create_merkle_tree(assertions: Sequence[Assertion], issuer_id: bytes, batch_number: int) -> NodesList:
-    """Build Merkle tree as section 5.4.1 of the specification"""
+    """
+    Build Merkle tree as defined by section 5.4.1 of the specification
+
+    :param assertions: a list of assertions to create merkle tree for
+    :param issuer_id: the issuer id, in bytes
+    :param batch_number: the batch number to create merkle tree for
+    :return: A :class:`NodesList` that can be passed into other functions
+    """
 
     assertion_head = HashHead((Distinguisher.HashAssertionInput, IssuerID(issuer_id), UInt32(batch_number)))
     empty_head = HashHead((Distinguisher.HashEmptyInput, IssuerID(issuer_id), UInt32(batch_number)))

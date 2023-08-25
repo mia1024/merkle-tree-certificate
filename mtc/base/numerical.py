@@ -1,13 +1,12 @@
 import io
 from typing import Self
 
-from .parser import (Parser,
-                     int_to_bytes,
-                     bytes_to_int
-                     )
+from .parser import Parser
+from .utils import int_to_bytes, bytes_to_int
 
 
 class Integer(Parser):
+    """Base class for handling unsigned integers"""
     size_in_bytes: int
 
     def __init__(self, /, value: int) -> None:

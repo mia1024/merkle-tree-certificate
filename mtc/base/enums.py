@@ -2,7 +2,8 @@ import enum
 import io
 from typing import Self
 
-from .parser import Parser, int_to_bytes, bytes_to_int
+from .parser import Parser
+from .utils import int_to_bytes, bytes_to_int
 
 
 class EnumMeta(type):
@@ -15,7 +16,8 @@ class EnumMeta(type):
 
 
 class Enum(Parser, metaclass=EnumMeta):
-    """We use this wrapper to implement the Parser interface on top of IntEnum"""
+    """Base class for handling enums"""
+
     EnumClass: type[enum.IntEnum]
     size_in_bytes: int
 

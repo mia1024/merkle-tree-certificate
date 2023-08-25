@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.exceptions import InvalidSignature
 
 from .assertion import Assertion
-from .base import Enum, Vector, OpaqueVector, Struct, Parser, int_to_bytes, ParserParsingError, UInt32, UInt64, UInt8
+from .base import Enum, Vector, OpaqueVector, Struct, Parser, int_to_bytes, UInt32, UInt64, UInt8
 from .tree import create_merkle_tree, sha256, HashAssertionInput, HashHead, Distinguisher, HashNodeInput, IssuerID, \
     SHA256Hash, NodesList
 
@@ -92,7 +92,7 @@ class ProofType(Enum):
 
 class SHA256Vector(Vector):
     data_type = SHA256Hash
-    min_length = 32
+    min_length = 0
     max_length = 2 ** 16 - 1
 
 
@@ -150,7 +150,7 @@ class Proof(Struct):
                 anchor = MerkleTreeTrustAnchor.parse(io.BytesIO(proof.trust_anchor.trust_anchor_data.value))
                 proof.trust_anchor.trust_anchor_data = anchor
                 proof.proof_data = MerkleTreeProofSHA256.parse(io.BytesIO(proof.proof_data.value))
-            except ParserParsingError:
+            except Parser.ParsingError:
                 raise cls.ParsingError(offset_start, offset_end, "data cannot be interpreted as a MerkleTreeProof")
 
         return proof
@@ -168,6 +168,14 @@ class BikeshedCertificate(Struct):
 
 def create_merkle_tree_proofs(nodes: NodesList, issuer_id: bytes, batch_number: int,
                               number_of_assertions_in_batch: int) -> list[Proof]:
+    """
+    Creates all the proofs for a particular batch.
+
+    :param nodes: a :class:`NodesList` as returned by :func:`mtc.tree.create_merkle_tree`
+    :param issuer_id: the issuer id, in bytes
+    :param batch_number: the batch number to create proofs for
+    :return: a :class:`Proof` for the assertion
+    """
     l = len(nodes)
 
     p_issuer_id = IssuerID(issuer_id)
@@ -188,6 +196,15 @@ def create_merkle_tree_proofs(nodes: NodesList, issuer_id: bytes, batch_number: 
 
 
 def create_merkle_tree_proof(nodes: NodesList, issuer_id: bytes, batch_number: int, index: int) -> Proof:
+    """
+    Creates a single Proof for a particular batch.
+
+    :param nodes: a :class:`NodesList` as returned by :func:`mtc.tree.create_merkle_tree`
+    :param issuer_id: the issuer id, in bytes
+    :param batch_number: the batch number to create a proof for
+    :param index: the index of the assertion in the batch
+    :return: a :class:`Proof` for the assertion
+    """
     # TODO: only hash the necessary assertions instead of everything
     l = len(nodes)
 
@@ -207,7 +224,18 @@ def create_merkle_tree_proof(nodes: NodesList, issuer_id: bytes, batch_number: i
 
 def create_signed_validity_window(nodes: NodesList, issuer_id: bytes, batch_number: int,
                                   private_key: ed25519.Ed25519PrivateKey,
-                                  previous_validity_window: Optional[SignedValidityWindow] = None):
+                                  previous_validity_window: Optional[
+                                      SignedValidityWindow] = None) -> SignedValidityWindow:
+    """
+    :param nodes: a :class:`NodesList` as returned by :func:`mtc.tree.create_merkle_tree`
+    :param issuer_id: The issuer id, in bytes
+    :param batch_number: The batch number to be certified
+    :param private_key: The private key of the issuer
+    :param previous_validity_window: Optional. The validity window of the previous batch. This value must be None if the
+        batch number is 0, and must not be None if the batch number is greater than 0. Additionally, the previous validity
+        window must be signed using the same private key.
+    :return: a :class:`SignedValidityWindow` for the batch
+    """
     if previous_validity_window is None:
         if batch_number != 0:
             raise ValueError("Batch number must be 0 without previous validity window")
@@ -221,7 +249,8 @@ def create_signed_validity_window(nodes: NodesList, issuer_id: bytes, batch_numb
                                                         previous_validity_window.window)
 
         try:
-            private_key.public_key().verify(previous_validity_window.signature.value, previous_labeled_window.to_bytes())
+            private_key.public_key().verify(previous_validity_window.signature.value,
+                                            previous_labeled_window.to_bytes())
         except InvalidSignature:
             raise ValueError("Cannot verify the signature of previous validity window")
 
@@ -237,12 +266,24 @@ def create_signed_validity_window(nodes: NodesList, issuer_id: bytes, batch_numb
 
 
 def create_bikeshed_certificate(assertion: Assertion, proof: Proof):
+    """Creates a BikeshedCertificate"""
     return BikeshedCertificate(assertion, proof)
 
 
 def verify_certificate(certificate: BikeshedCertificate, signed_validity_window: SignedValidityWindow,
                        issuer_id_bytes: bytes,
                        public_key: ed25519.Ed25519PublicKey):
+    """
+    Verifies the certificate. Returns `None` on success. Raises `ValueError` if something is improperly formatted.
+    Raises :class:`cryptography:cryptography.exceptions.InvalidSignature` if the signature on the validity window
+    cannot be verified.
+
+    :param certificate: The certificate to be validated
+    :param signed_validity_window: The SignedValidityWindow currently in effect
+    :param issuer_id_bytes: The issuer id, in bytes
+    :param public_key: The public key of the issuer
+    :return: None
+    """
     validity_window = signed_validity_window.window
     signature = signed_validity_window.signature
     issuer_id = IssuerID(issuer_id_bytes)

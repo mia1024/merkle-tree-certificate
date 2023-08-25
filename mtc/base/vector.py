@@ -2,12 +2,8 @@ import io
 import textwrap
 from typing import Self
 
-from .parser import (Parser,
-                     int_to_bytes,
-                     bytes_to_int,
-                     printable_bytes_truncate,
-                     bytes_needed
-                     )
+from .parser import Parser
+from .utils import int_to_bytes, bytes_to_int, bytes_needed, printable_bytes_truncate
 
 
 class VectorMeta(type):
@@ -84,8 +80,8 @@ class Vector(Parser, metaclass=VectorMeta):
 
 # a special type of vector that can probably be implemented as a Vector of chars
 class OpaqueVector(Parser, metaclass=VectorMeta):
-    min_length: int = 1
-    max_length: int = 1
+    min_length: int = 0
+    max_length: int = 0
     # this is computed in metaclass
     marker_size: int
 

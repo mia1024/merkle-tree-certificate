@@ -103,7 +103,9 @@ def read_certificate(batch_number: int, index: int) -> BikeshedCertificate:
     with open(BATCHES_ROOT / str(batch_number) / "certificates", "rb") as f:
         for i in range(index):
             BikeshedCertificate.skip(f)
-        return BikeshedCertificate.parse(f)
+        cert= BikeshedCertificate.parse(f)
+        print(cert.print())
+        return cert
 
 
 def generate_test_key_pairs(path: str):

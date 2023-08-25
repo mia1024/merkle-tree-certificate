@@ -13,6 +13,31 @@ class Field(NamedTuple):
 
 
 class StructMeta(type):
+    """
+    The metaclass for :class:`Struct`. This is what enables the dataclass-like behavior of :class:`Struct`, but from
+    inheritance instead of a class decorator. It reads the class annotation and instantiates the fields accordingly, in
+    the order defined. It also defines :attr:`__slots__` on the inherited  classes to reduce access time and memory usage.
+    All the metadata processed here is stored in the :attr:`_fields` attribute. For example, if you define a class like
+
+    .. code-block::
+
+        class HashEmptyInput(Struct):
+            hash_head: HashHead
+            index: UInt64
+            level: UInt8
+
+    Then HashEmptyInput._fields will be
+
+    .. code-block::
+
+        HashEmptyInput._fields = [
+            Field(name = 'hash_head', data_type = HashHead),
+            Field(name = 'index', data_type = UInt64),
+            Field(name = 'level', data_type = UInt8)
+        ]
+
+    where :class:`Field` is a named tuple.
+    """
     def __new__(cls, name, bases, attrs, **kwargs):
 
         annotations = attrs.get("__annotations__")
@@ -46,6 +71,16 @@ class StructMeta(type):
 
 
 class Struct(Parser, metaclass=StructMeta):
+    """
+    Implements a struct similar to how it works in C. With this class, you can define structs as simple as
+
+    .. code-block::
+
+        class Assertion(Struct):
+            subject_type: SubjectType
+            subject_info: SubjectInfo
+            claims: ClaimList
+    """
     _fields: list[Field] = []
 
     def __init__(self, /, *value: Parser) -> None:
@@ -118,6 +153,9 @@ class Struct(Parser, metaclass=StructMeta):
         super().__setattr__(key, value)
 
     def validate(self) -> None:
+        """
+        Checks if all fields passed into the struct initializer are of the correct type in the correct order
+        """
         if len(self.value) != len(self._fields):
             raise ValueError("Input to a struct must have the same length as struct definition")
         for i, v in enumerate(self.value):

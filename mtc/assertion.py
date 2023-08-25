@@ -9,7 +9,8 @@ from .ip import IPv6Address, IPv4Address
 from typing import Iterable
 
 
-def sort_dns_names(names: Iterable[str]):
+def sort_dns_names(names: Iterable[str]) -> list[str]:
+    """Sort DNS names in lexicographical order, starting from the TLD"""
     # we assume everything here is valid dns name
     names_tmp: list[list[str]] = list(map(lambda s: list(reversed(s.split("."))), names))
 
@@ -20,6 +21,7 @@ def sort_dns_names(names: Iterable[str]):
 
 
 class IPv4AddressList(Vector):
+    """Implemented according to section 4.2 of the specification"""
     data_type = IPv4Address
     min_length = 4
     max_length = 2 ** 16 - 1
@@ -30,6 +32,7 @@ class IPv4AddressList(Vector):
 
 
 class IPv6AddressList(Vector):
+    """Implemented according to section 4.2 of the specification"""
     data_type = IPv6Address
     min_length = 16
     max_length = 2 ** 16 - 1
@@ -51,6 +54,7 @@ class ClaimTypeEnum(enum.IntEnum):
 
 
 class SubjectType(Enum):
+    """Implemented according to section 4 of the specification"""
     EnumClass = SubjectTypeEnum
     size_in_bytes = 2
 
@@ -68,6 +72,7 @@ class ClaimType(Enum):
 
 
 class DNSName(OpaqueVector):
+    """Implemented according to section 4.1 of the specification"""
     min_length = 1
     max_length = 255
 
@@ -78,6 +83,7 @@ class DNSName(OpaqueVector):
 
 
 class DNSNameList(Vector):
+    """Implemented according to section 4.1 of the specification"""
     data_type = DNSName
     min_length = 1
     max_length = 2 ** 16 - 1
@@ -91,11 +97,13 @@ class DNSNameList(Vector):
 
 
 class SubjectInfo(OpaqueVector):
+    """Implemented according to section 4 of the specification"""
     min_length = 1
     max_length = 2 ** 16 - 1
 
 
 class Claim(Variant):
+    """Implemented according to section 4 of the specification"""
     vary_on_type = ClaimType
     mapping = {
         ClaimType.dns: DNSNameList,
@@ -106,18 +114,21 @@ class Claim(Variant):
 
 
 class ClaimList(Vector):
+    """Implemented according to section 4 of the specification"""
     data_type = Claim
     min_length = 0
     max_length = 2 ** 16 - 1
 
 
 class Assertion(Struct):
+    """Implemented according to section 4 of the specification"""
     subject_type: SubjectType
     subject_info: SubjectInfo
     claims: ClaimList
 
 
 class Assertions(Vector):
+    """Implemented according to section 5.4.2 of the specification"""
     data_type = Assertion
     min_length = 0
     max_length = 2 ** 64 - 1
@@ -130,6 +141,16 @@ ListOrTuple = list[T] | tuple[T, ...]
 def create_assertion(subject_info: bytes, *, ipv4_addrs: Optional[ListOrTuple[str]] = None,
                      ipv6_addrs: Optional[ListOrTuple[str]] = None, dns_names: Optional[ListOrTuple[str]] = None,
                      dns_wild_cards: Optional[ListOrTuple[str]] = None) -> Assertion:
+    """
+    Creates an assertion as defined in section 4 of the specification.
+
+    :param subject_info: The subject info from TLS. This is most likely the public key for the subject.
+    :param ipv4_addrs:  A list of possibly empty IPv4 address.
+    :param ipv6_addrs: A list of possibly empty IPv6 address.
+    :param dns_names: A list of possibly empty DNS names.
+    :param dns_wild_cards: A list of possibly empty DNS wildcards.
+    :return: an :class:`Assertion` object
+    """
     subject_info_bytes = SubjectInfo(subject_info)
     claims: list[Claim] = []
 
