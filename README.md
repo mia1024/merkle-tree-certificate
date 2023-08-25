@@ -59,6 +59,11 @@ this level of performance is certainly enough. Additionally, profiling reveals t
 doing filesystem IO. This can be further optimized by using a production database instead of reading and writing everything from/to 
 a few files on the disk. 
 
+For example, the `verify` CLI command takes around 20ms to execute, while the underlying call to 
+API method `verify_certificate()` only takes 2.84ms. Similarly, the time for `stress-test` includes writing a 732MB file
+to disk. The underlying call time to the API methods is 18.6s when no flag is specified, and 8.0s when both `--no-gc` and
+`--no-validation` are specified. 
+
 ### Generate keys
 
 For testing convenience, you can run 
