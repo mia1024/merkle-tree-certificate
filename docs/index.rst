@@ -2,15 +2,6 @@
 Merkle Tree Certificate Reference Implementation: API documentations
 ====================================================================
 
-.. toctree::
-    :hidden:
-    :caption: Table of Contents
-    :glob:
-    :maxdepth: 1
-
-    *
-
-
 Design Philosophy
 =================
 
@@ -49,3 +40,11 @@ Interfaces
 ==========
 
 To learn more about the internal interfaces, check out :ref:`interface`.
+
+.. toctree::
+    :hidden:
+    :caption: Table of Contents
+    :glob:
+    :maxdepth: 1
+
+    *

@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(
     description='Merkle Tree Certificate CLI')
 
 parser.add_argument("--no-validation", action="store_true", help="disable object validation")
+parser.add_argument("--no-gc", action="store_true", help="disable garbage collector")
 subparsers = parser.add_subparsers(title="modes", dest="command",
                                    description="The mode to run the CLI in. Run this program with --help after a mode to see more options",
                                    metavar="mode", required=True)
@@ -62,6 +63,10 @@ def run():
 
     if res.no_validation:
         Parser.disable_validation()
+
+    if res.no_gc:
+        import gc
+        gc.disable()
 
     match res.command:
         case "verify":
