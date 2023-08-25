@@ -14,6 +14,7 @@ class DistinguisherEnum(enum.IntEnum):
 
 
 class Distinguisher(Enum):
+    """Implemented according to section 5.4.1 of the specification"""
     size_in_bytes = 1
     EnumClass = DistinguisherEnum
     HashEmptyInput: "Distinguisher"
@@ -22,15 +23,18 @@ class Distinguisher(Enum):
 
 
 class SHA256Hash(Array):
+    """Implemented according to section 5.4.1 of the specification"""
     length = 32
 
 
 class IssuerID(OpaqueVector):
+    """Implemented according to section 5.4.2 of the specification"""
     min_length = 0
     max_length = 32
 
 
 class HashHead(Parser):
+    """Implemented according to section 5.4.1 of the specification"""
     def __init__(self, /, value: tuple[Distinguisher, IssuerID, UInt32]) -> None:
         # value is (distinguisher, issuer_id, batch_number)
         self.value = value
@@ -62,12 +66,14 @@ class HashHead(Parser):
 
 
 class HashEmptyInput(Struct):
+    """Implemented according to section 5.4.1 of the specification"""
     hash_head: HashHead
     index: UInt64
     level: UInt8
 
 
 class HashNodeInput(Struct):
+    """Implemented according to section 5.4.1 of the specification"""
     hash_head: HashHead
     index: UInt64
     level: UInt8
@@ -76,6 +82,7 @@ class HashNodeInput(Struct):
 
 
 class HashAssertionInput(Struct):
+    """Implemented according to section 5.4.1 of the specification"""
     hash_head: HashHead
     index: UInt64
     assertion: Assertion

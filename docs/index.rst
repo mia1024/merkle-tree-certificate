@@ -48,28 +48,4 @@ all you need.
 Interfaces
 ==========
 
-The following interfaces (i.e. :class:`~mtc.base.parser.Parser` s) are implemented
-
-
-.. autoclass:: mtc.ip.IPv4Address(value:str|bytes)
-.. autoclass:: mtc.ip.IPv6Address(value:str|bytes)
-.. autoclass:: mtc.assertion.IPv4AddressList(*value:IPv4Address)
-    :members: min_length, max_length, data_type
-.. autoclass:: mtc.assertion.IPv6AddressList(*value:IPv6Address)
-    :members: min_length, max_length, data_type
-.. autoclass:: mtc.assertion.SubjectType(value:int)
-    :members: tls
-.. autoclass:: mtc.assertion.ClaimType(value:int)
-    :members: dns, dns_wildcard, ipv4, ipv6
-.. autoclass:: mtc.assertion.DNSName(value:bytes)
-        :members: min_length, max_length
-.. autoclass:: mtc.assertion.DNSNameList(*value:DNSNameList)
-    :members: min_length, max_length, data_type
-.. autoclass:: mtc.assertion.SubjectInfo(value:bytes)
-    :members: min_length, max_length
-.. autoclass:: mtc.assertion.Claim(value:tuple[ClaimType,DNSNameList|IPv4AddressList|IPv6AddressList]))
-.. autoclass:: mtc.assertion.ClaimList(value:bytes)
-.. autoclass:: mtc.assertion.Assertion(*value:tuple[SubjectType, SubjectInfo, ClaimList])
-    :members: subject_type, subject_info, claims
-.. autoclass:: mtc.assertion.Assertions(*value:Assertion)
-    :members: data_type, min_length, max_length
+To learn more about the internal interfaces, check out :ref:`interface`.

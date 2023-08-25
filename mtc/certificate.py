@@ -20,6 +20,7 @@ SHA256_HASH_SIZE = 32
 
 
 class TreeHeads(Parser):
+    """Implemented according to section 5.4.2 of the specification"""
     def __init__(self, /, value: list[SHA256Hash]) -> None:
         self.value = value
 
@@ -44,11 +45,13 @@ class TreeHeads(Parser):
 
 
 class ValidityWindow(Struct):
+    """Implemented according to section 5.4.2 of the specification"""
     batch_number: UInt32
     tree_heads: TreeHeads
 
 
 class ValidityWindowLabel(Parser):
+    """Implemented according to section 5.4.2 of the specification"""
     def __init__(self, /, value: bytes = b"Merkle Tree Crts ValidityWindow\0") -> None:
         self.value = value
 
@@ -65,17 +68,20 @@ class ValidityWindowLabel(Parser):
 
 
 class LabeledValidityWindow(Struct):
+    """Implemented according to section 5.4.2 of the specification"""
     label: ValidityWindowLabel
     issuer_id: IssuerID
     window: ValidityWindow
 
 
 class Signature(OpaqueVector):
+    """Implemented according to section 5.4.2 of the specification"""
     min_length = 1
     max_length = 2 ** 16 - 1
 
 
 class SignedValidityWindow(Struct):
+    """Implemented according to section 5.4.2 of the specification"""
     window: ValidityWindow
     signature: Signature
 
@@ -85,28 +91,33 @@ class ProofTypeEnum(enum.IntEnum):
 
 
 class ProofType(Enum):
+    """Implemented according to section 5.4.3 of the specification"""
     EnumClass = ProofTypeEnum
     size_in_bytes = 2
     merkle_tree_sha256: "ProofType"
 
 
 class SHA256Vector(Vector):
+    """Implemented according to section 5.4.3 of the specification"""
     data_type = SHA256Hash
     min_length = 0
     max_length = 2 ** 16 - 1
 
 
 class TrustAnchorData(OpaqueVector):
+    """Implemented according to section 5.4.3 of the specification"""
     min_length = 0
     max_length = 255
 
 
 class ProofData(OpaqueVector):
+    """Implemented according to section 5.4.3 of the specification"""
     min_length = 0
     max_length = 2 ** 16 - 1
 
 
 class MerkleTreeTrustAnchor(Struct):
+    """Implemented according to section 5.4.3 of the specification"""
     issuer_id: IssuerID
     batch_number: UInt32
 
@@ -117,6 +128,7 @@ class MerkleTreeTrustAnchor(Struct):
 
 
 class MerkleTreeProofSHA256(Struct):
+    """Implemented according to section 5.4.3 of the specification"""
     index: UInt64
     path: SHA256Vector
 
@@ -127,6 +139,7 @@ class MerkleTreeProofSHA256(Struct):
 
 
 class TrustAnchor(Struct):
+    """Implemented according to section 5.4.3 of the specification"""
     proof_type: ProofType
     trust_anchor_data: TrustAnchorData | MerkleTreeTrustAnchor
 
@@ -137,6 +150,7 @@ class TrustAnchor(Struct):
 
 
 class Proof(Struct):
+    """Implemented according to section 5.4.3 of the specification"""
     trust_anchor: TrustAnchor
     proof_data: ProofData | MerkleTreeProofSHA256
 
@@ -162,6 +176,7 @@ class Proof(Struct):
 
 
 class BikeshedCertificate(Struct):
+    """Implemented according to section 5.4.3 of the specification"""
     assertion: Assertion
     proof: Proof
 
