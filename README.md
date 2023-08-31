@@ -1,5 +1,6 @@
 # Merkle Tree Certificates
 
+This is a reference implementation of the [Merkle Tree Certificate](https://www.ietf.org/id/draft-davidben-tls-merkle-tree-certs-00.html) proposal. 
 
 ## Dependencies
 
