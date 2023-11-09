@@ -1,6 +1,6 @@
 # Merkle Tree Certificates
 
-This is a reference implementation of the [Merkle Tree Certificate](https://www.ietf.org/id/draft-davidben-tls-merkle-tree-certs-00.html) proposal. API documentations can be found at [Github Pages](https://mia1024.github.io/merkle-tree-certificate/).
+This is a reference implementation of the [Merkle Tree Certificate](https://datatracker.ietf.org/doc/draft-davidben-tls-merkle-tree-certs/00/) proposal. API documentations can be found at [Github Pages](https://mia1024.github.io/merkle-tree-certificate/).
 
 ## Dependencies
 
